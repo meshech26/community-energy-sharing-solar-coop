@@ -19,12 +19,20 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
 
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+    household: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Household',
+      required: true,
+    },
+
+    // Every user is a Household Member. This flag grants the additional
+    // Co-op Administrator permissions without changing their membership.
+    isCoopAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   {
