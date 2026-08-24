@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const proposalRoutes = require('./routes/proposalRoutes');
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is required to start the API.');
@@ -18,6 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/proposals', proposalRoutes);
 
 app.get('/', (req, res) => {
   res.json({
