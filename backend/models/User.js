@@ -21,10 +21,19 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    invitationCode: {
+      type: String,
+    },
+
+    householdId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Household',
+    },
+
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['HOUSEHOLD_MEMBER', 'COOP_ADMIN'],
+      default: 'HOUSEHOLD_MEMBER',
     },
   },
   {

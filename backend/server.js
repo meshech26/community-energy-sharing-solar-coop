@@ -11,6 +11,13 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Load Models
+require('./models/User');
+
+// Routes
+const energyRoutes = require('./routes/energyRoutes');
+app.use('/api/energy', energyRoutes);
+
 app.get('/', (req, res) => {
   res.json({
     message: 'Community Energy Sharing API is running',

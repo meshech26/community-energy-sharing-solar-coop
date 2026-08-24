@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "Community Energy Sharing API",
+    "description": "Postman Collection for testing the Community Energy Sharing & Requests feature.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Seller: Create Listing",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{user_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 15,\n  \"unit\": \"kWh\",\n  \"unitPrice\": 45,\n  \"availableDate\": \"2026-10-01T10:00:00.000Z\",\n  \"description\": \"Surplus morning solar\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/energy/listings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "listings"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Admin: View Pending Listings",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/admin/pending",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "admin",
+            "pending"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Admin: Approve Listing",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/admin/listings/{{listing_id}}/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "admin",
+            "listings",
+            "{{listing_id}}",
+            "approve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Buyer: View Active Listings",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/listings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "listings"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Buyer: Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"listingId\": \"{{listing_id}}\",\n  \"quantity\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/energy/orders",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "orders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Buyer: Start Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/orders/{{order_id}}/payment",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "orders",
+            "{{order_id}}",
+            "payment"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Buyer: Confirm Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/orders/{{order_id}}/payment/confirm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "orders",
+            "{{order_id}}",
+            "payment",
+            "confirm"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Seller: View My Listings",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{user_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/energy/listings/my",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "listings",
+            "my"
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Seller: Edit Listing",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{user_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 20,\n  \"unitPrice\": 50\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/energy/listings/{{listing_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "energy",
+            "listings",
+            "{{listing_id}}"
+          ]
+        }
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YThjMWJlMmNlNjI4Mjg3NmM2Y2JmODUiLCJob3VzZWhvbGRJZCI6IjZhOGMxYmUyY2U2MjgyODc2YzZjYmY4MyIsInJvbGUiOiJDT09QX0FETUlOIiwiaWF0IjoxNzg3NTY3MDc0LCJleHAiOjE3OTAxNTkwNzR9.1KNVCa3t42XNodndQZOrynG77efpgLEkCVafjH1WTjU",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YThjMWJlMmNlNjI4Mjg3NmM2Y2JmODYiLCJob3VzZWhvbGRJZCI6IjZhOGMxYmUyY2U2MjgyODc2YzZjYmY4NCIsInJvbGUiOiJIT1VTRUhPTERfTUVNQkVSIiwiaWF0IjoxNzg3NTY3MDc0LCJleHAiOjE3OTAxNTkwNzR9.kmOoEW1KIJcUi0cGVBbJ7LTZBPWmNxv_F-9Rc5a59rA",
+      "type": "string"
+    },
+    {
+      "key": "listing_id",
+      "value": "REPLACE_ME_WITH_LISTING_ID",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "REPLACE_ME_WITH_ORDER_ID",
+      "type": "string"
+    }
+  ]
+}
