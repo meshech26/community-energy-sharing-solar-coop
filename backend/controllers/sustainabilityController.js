@@ -1,4 +1,35 @@
 const SustainabilityGoal = require("../models/SustainabilityGoal");
+const { suggestTargetPercentReduction } = require("../utils/suggestionCalculator");
+
+// GET /api/sustainability/goal/suggestion
+exports.getSuggestedTarget = async (req, res) => {
+  try {
+    const goal = await SustainabilityGoal.findOne({ user: req.user.id });
+    const suggestedTargetPercentReduction = suggestTargetPercentReduction(goal ? goal.progressHistory : []);
+    res.json({ suggestedTargetPercentReduction });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// PATCH /api/sustainability/goal/leaderboard-opt-in
+exports.toggleLeaderboardOptIn = async (req, res) => {
+  try {
+    const { leaderboardOptIn } = req.body;
+    if (typeof leaderboardOptIn !== "boolean") {
+      return res.status(400).json({ message: "leaderboardOptIn must be true or false" });
+    }
+    const goal = await SustainabilityGoal.findOneAndUpdate(
+      { user: req.user.id },
+      { leaderboardOptIn },
+      { new: true }
+    );
+    if (!goal) return res.status(404).json({ message: "No goal found. Create one first." });
+    res.json(goal);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 // CREATE — POST /api/sustainability/goal
 exports.createGoal = async (req, res) => {
