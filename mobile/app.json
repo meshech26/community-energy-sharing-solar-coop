@@ -19,7 +19,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bunder": "metro"
-    }
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = 'http://YOUR_COMPUTER_IP:5000/api';
+import { useAuthStore } from '../store/authStore';
+
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,4 +11,15 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 export default api;
+export { API_URL };
