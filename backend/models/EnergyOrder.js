@@ -48,6 +48,9 @@ const energyOrderSchema = new mongoose.Schema(
       type: String,
       enum: ['PENDING', 'PAYMENT_PROCESSING', 'COMPLETED', 'CANCELLED'],
       default: 'PENDING',
+    },
+    paymentIntentId: {
+      type: String,
     }
   },
   {

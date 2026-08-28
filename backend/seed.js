@@ -25,7 +25,7 @@ const seedData = async () => {
       name: 'Coop Admin',
       email: 'admin@solarcoop.com',
       password: hashedPassword,
-      role: 'COOP_ADMIN',
+      isCoopAdmin: true,
       householdId: adminHouseholdId
     });
 
@@ -34,7 +34,7 @@ const seedData = async () => {
       name: 'Regular User',
       email: 'user@solarcoop.com',
       password: hashedPassword,
-      role: 'HOUSEHOLD_MEMBER',
+      isCoopAdmin: false,
       householdId: userHouseholdId
     });
 
@@ -43,7 +43,7 @@ const seedData = async () => {
     // Generate Tokens
     const generateToken = (user) => {
       return jwt.sign(
-        { userId: user._id, householdId: user.householdId, role: user.role },
+        { userId: user._id, householdId: user.householdId, isCoopAdmin: user.isCoopAdmin },
         process.env.JWT_SECRET || 'community_energy_secret_2026',
         { expiresIn: '30d' }
       );

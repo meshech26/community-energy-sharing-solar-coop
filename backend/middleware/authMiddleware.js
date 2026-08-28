@@ -24,7 +24,7 @@ exports.protect = (req, res, next) => {
     req.user = {
       id: decoded.userId,
       householdId: decoded.householdId,
-      role: decoded.role
+      isCoopAdmin: decoded.isCoopAdmin
     };
     next();
   } catch (error) {
@@ -34,7 +34,7 @@ exports.protect = (req, res, next) => {
 
 // Admin middleware
 exports.admin = (req, res, next) => {
-  if (req.user && req.user.role === 'COOP_ADMIN') {
+  if (req.user && req.user.isCoopAdmin === true) {
     next();
   } else {
     res.status(403).json({ success: false, error: 'Not authorized as admin' });

@@ -30,10 +30,9 @@ const userSchema = new mongoose.Schema(
       ref: 'Household',
     },
 
-    role: {
-      type: String,
-      enum: ['HOUSEHOLD_MEMBER', 'COOP_ADMIN'],
-      default: 'HOUSEHOLD_MEMBER',
+    isCoopAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   {

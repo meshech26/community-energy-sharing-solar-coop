@@ -288,12 +288,12 @@
     },
     {
       "key": "admin_token",
-      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YThjMWJlMmNlNjI4Mjg3NmM2Y2JmODUiLCJob3VzZWhvbGRJZCI6IjZhOGMxYmUyY2U2MjgyODc2YzZjYmY4MyIsInJvbGUiOiJDT09QX0FETUlOIiwiaWF0IjoxNzg3NTY3MDc0LCJleHAiOjE3OTAxNTkwNzR9.1KNVCa3t42XNodndQZOrynG77efpgLEkCVafjH1WTjU",
+      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTkxNzZjMmQ5MzE5Mzc4YmZmYzYyZTkiLCJob3VzZWhvbGRJZCI6IjZhOTE3NmMyZDkzMTkzNzhiZmZjNjJlNyIsImlzQ29vcEFkbWluIjp0cnVlLCJpYXQiOjE3ODc5MTgwMTgsImV4cCI6MTc5MDUxMDAxOH0.uE6atfDbA2wWR0K6l4Mz5ZWecIOLKQ2AciZlJ9ucnM4",
       "type": "string"
     },
     {
       "key": "user_token",
-      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YThjMWJlMmNlNjI4Mjg3NmM2Y2JmODYiLCJob3VzZWhvbGRJZCI6IjZhOGMxYmUyY2U2MjgyODc2YzZjYmY4NCIsInJvbGUiOiJIT1VTRUhPTERfTUVNQkVSIiwiaWF0IjoxNzg3NTY3MDc0LCJleHAiOjE3OTAxNTkwNzR9.kmOoEW1KIJcUi0cGVBbJ7LTZBPWmNxv_F-9Rc5a59rA",
+      "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTkxNzZjMmQ5MzE5Mzc4YmZmYzYyZWEiLCJob3VzZWhvbGRJZCI6IjZhOTE3NmMyZDkzMTkzNzhiZmZjNjJlOCIsImlzQ29vcEFkbWluIjpmYWxzZSwiaWF0IjoxNzg3OTE4MDE4LCJleHAiOjE3OTA1MTAwMTh9.FT72nLYn-aJWakmKuBjPqwl6DKlhvq1hYLrQEl7UWdE",
       "type": "string"
     },
     {
