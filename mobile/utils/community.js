@@ -24,6 +24,14 @@ export const proposalAccents = {
 
 export const getProposalStatusLabel = (status) => proposalStatusLabels[status] || 'Proposal';
 
+export const filterProposalsBySearch = (proposals, query) => {
+  const normalizedQuery = String(query || '').trim().toLocaleLowerCase();
+  if (!normalizedQuery) return proposals;
+
+  return proposals.filter((proposal) => [proposal.title, proposal.summary, proposal.description]
+    .some((value) => String(value || '').toLocaleLowerCase().includes(normalizedQuery)));
+};
+
 export const formatProposalDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Date unavailable';

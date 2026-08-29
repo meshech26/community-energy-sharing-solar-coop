@@ -66,6 +66,30 @@ describe('Community frontend', () => {
     expect(await view.findByText('Meter replacement')).toBeTruthy();
   });
 
+  test('searches the selected proposal status, preserves lifecycle counts, shows no-results, and clears immediately', async () => {
+    listPublishedProposals.mockResolvedValue(proposals);
+    const view = await renderWithNavigation(<CommunityHomeScreen navigation={navigation} />);
+
+    await view.findByText('Battery storage');
+    fireEvent.changeText(view.getByLabelText('Search proposals'), 'BATTERY');
+    expect(await view.findByText('Battery storage')).toBeTruthy();
+    expect(view.getByText('Active 1')).toBeTruthy();
+    expect(view.getByText('Upcoming 1')).toBeTruthy();
+    expect(view.getByText('Closed 1')).toBeTruthy();
+
+    fireEvent.press(view.getByText('Upcoming 1'));
+    expect(await view.findByText('No proposals match your search.')).toBeTruthy();
+    expect(view.getByText('Try another title or keyword.')).toBeTruthy();
+
+    fireEvent.press(view.getByLabelText('Clear proposal search'));
+    expect(await view.findByText('Roof upgrade')).toBeTruthy();
+
+    fireEvent.press(view.getByText('Closed 1'));
+    expect(await view.findByText('Meter replacement')).toBeTruthy();
+    fireEvent.changeText(view.getByLabelText('Search proposals'), 'meter');
+    expect(await view.findByText('Meter replacement')).toBeTruthy();
+  });
+
   test('shows admin controls only for isCoopAdmin true', async () => {
     listPublishedProposals.mockResolvedValue([]);
     useAuthStore.getState().login({ id: 'member-id', name: 'Member', isCoopAdmin: false }, 'token');
@@ -181,6 +205,17 @@ describe('Community frontend', () => {
     expect(view.getByText('Roof upgrade')).toBeTruthy();
     expect(view.getByText('Meter replacement')).toBeTruthy();
     expect(view.queryByText('Delete Draft')).toBeNull();
+  });
+
+  test('allows an administrator to search manageable draft and published proposals', async () => {
+    useAuthStore.getState().login({ id: 'admin-id', name: 'Admin', isCoopAdmin: true }, 'token');
+    listMyProposals.mockResolvedValue([draftProposal, proposals[0]]);
+    const view = await renderWithNavigation(<ManageProposalsScreen navigation={navigation} />);
+
+    await view.findByText('Draft battery proposal');
+    fireEvent.changeText(view.getByLabelText('Search proposals'), 'draft');
+    expect(view.getByText('Draft battery proposal')).toBeTruthy();
+    await waitFor(() => expect(view.queryByText('Battery storage')).toBeNull());
   });
 
   test('opens the voting deadline calendar and displays a friendly stored date', async () => {

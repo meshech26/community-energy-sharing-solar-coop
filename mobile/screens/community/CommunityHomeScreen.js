@@ -10,9 +10,10 @@ import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
 import SectionHeader from '../../components/SectionHeader';
 import ProposalCard from '../../components/community/ProposalCard';
+import ProposalSearchField from '../../components/community/ProposalSearchField';
 import { listPublishedProposals } from '../../services/proposalService';
 import { useAuthStore } from '../../store/authStore';
-import { getCommunityError, getProposalStatusLabel, proposalAccents } from '../../utils/community';
+import { filterProposalsBySearch, getCommunityError, getProposalStatusLabel, proposalAccents } from '../../utils/community';
 
 const filters = ['active', 'upcoming', 'closed'];
 
@@ -20,6 +21,7 @@ export default function CommunityHomeScreen({ navigation }) {
   const user = useAuthStore((state) => state.user);
   const [proposals, setProposals] = useState([]);
   const [filter, setFilter] = useState('active');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -38,12 +40,16 @@ export default function CommunityHomeScreen({ navigation }) {
   useFocusEffect(useCallback(() => { loadProposals(); }, [loadProposals]));
 
   const counts = filters.reduce((result, status) => ({ ...result, [status]: proposals.filter((proposal) => proposal.status === status).length }), {});
-  const filteredProposals = proposals.filter((proposal) => proposal.status === filter);
+  const statusProposals = proposals.filter((proposal) => proposal.status === filter);
+  const filteredProposals = filterProposalsBySearch(statusProposals, searchQuery);
+  const hasSearchQuery = searchQuery.trim().length > 0;
 
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
         <SectionHeader description="Take part in decisions that affect your co-op." eyebrow="Co-op Proposals & Voting" title="Community" />
+
+        <ProposalSearchField onChangeText={setSearchQuery} value={searchQuery} />
 
         {user?.isCoopAdmin === true ? (
           <View style={styles.adminActions}>
@@ -78,7 +84,14 @@ export default function CommunityHomeScreen({ navigation }) {
             <SecondaryButton onPress={loadProposals}>Try again</SecondaryButton>
           </View>
         ) : null}
-        {!isLoading && !error && filteredProposals.length === 0 ? (
+        {!isLoading && !error && filteredProposals.length === 0 && hasSearchQuery && statusProposals.length > 0 ? (
+          <EmptyState
+            description="Try another title or keyword."
+            icon="magnify-close"
+            title="No proposals match your search."
+          />
+        ) : null}
+        {!isLoading && !error && filteredProposals.length === 0 && (!hasSearchQuery || statusProposals.length === 0) ? (
           <EmptyState
             description={filter === 'active' ? 'There are no proposals requiring your vote right now.' : filter === 'upcoming' ? 'There are no scheduled proposals at the moment.' : 'Completed community decisions will appear here.'}
             icon="account-group-outline"

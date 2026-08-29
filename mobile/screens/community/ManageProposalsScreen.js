@@ -11,15 +11,17 @@ import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
 import SectionHeader from '../../components/SectionHeader';
 import ProposalCard from '../../components/community/ProposalCard';
+import ProposalSearchField from '../../components/community/ProposalSearchField';
 import { deleteDraft, listMyProposals, publishProposal } from '../../services/proposalService';
 import { useAuthStore } from '../../store/authStore';
-import { getCommunityError, getProposalStatusLabel, proposalAccents } from '../../utils/community';
+import { filterProposalsBySearch, getCommunityError, getProposalStatusLabel, proposalAccents } from '../../utils/community';
 
 const statusOrder = ['draft', 'upcoming', 'active', 'closed', 'cancelled'];
 
 export default function ManageProposalsScreen({ navigation }) {
   const user = useAuthStore((state) => state.user);
   const [proposals, setProposals] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -55,17 +57,22 @@ export default function ManageProposalsScreen({ navigation }) {
 
   if (user?.isCoopAdmin !== true) return <ScreenContainer edges={['left', 'right']}><View style={styles.page}><EmptyState description="Only Co-op Administrators can manage proposals." icon="lock-outline" title="Proposal management" /></View></ScreenContainer>;
 
+  const filteredProposals = filterProposalsBySearch(proposals, searchQuery);
+  const hasSearchQuery = searchQuery.trim().length > 0;
+
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.page}>
         <SectionHeader description="Create, publish, and manage your co-op proposals." eyebrow="Co-op Admin" title="Manage proposals" />
         <PrimaryButton onPress={() => navigation.navigate('CreateProposal')}>Create Proposal</PrimaryButton>
+        <View style={styles.search}><ProposalSearchField onChangeText={setSearchQuery} value={searchQuery} /></View>
         {isLoading ? <LoadingState label="Loading your proposals…" /> : null}
         {error ? <View style={styles.error}><ErrorMessage>{error}</ErrorMessage><SecondaryButton onPress={loadProposals}>Try again</SecondaryButton></View> : null}
         {successMessage ? <Text accessibilityLiveRegion="polite" style={styles.success}>{successMessage}</Text> : null}
         {!isLoading && !error && proposals.length === 0 ? <View style={styles.empty}><EmptyState description="Create a proposal to begin collecting community decisions." icon="file-document-outline" title="No proposals yet" /></View> : null}
+        {!isLoading && !error && proposals.length > 0 && filteredProposals.length === 0 && hasSearchQuery ? <View style={styles.empty}><EmptyState description="Try another title or keyword." icon="magnify-close" title="No proposals match your search." /></View> : null}
         {!isLoading && !error ? statusOrder.map((status) => {
-          const group = proposals.filter((proposal) => proposal.status === status);
+          const group = filteredProposals.filter((proposal) => proposal.status === status);
           if (!group.length) return null;
           return (
             <View key={status} style={styles.group}>
@@ -113,6 +120,7 @@ const styles = StyleSheet.create({
   error: { marginTop: 20 },
   success: { color: '#14633F', fontSize: 14, fontWeight: '700', marginTop: 16 },
   empty: { marginTop: 24 },
+  search: { marginTop: 16 },
   group: { marginTop: 26 },
   groupHeading: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
   groupMarker: { borderRadius: 4, height: 8, marginRight: 8, width: 8 },
