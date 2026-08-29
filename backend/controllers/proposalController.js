@@ -242,6 +242,25 @@ const cancelProposal = async (req, res) => {
   }
 };
 
+const deleteDraft = async (req, res) => {
+  try {
+    const result = await getProposalForAdmin(req.params.id, req.user._id);
+    if (result.error === 'invalid') return res.status(400).json({ message: 'Invalid proposal ID.' });
+    if (result.error === 'missing') return res.status(404).json({ message: 'Proposal not found.' });
+    if (result.error === 'forbidden') return res.status(403).json({ message: 'You cannot manage this proposal.' });
+
+    if (result.proposal.status !== 'draft') {
+      return res.status(409).json({ message: 'Only draft proposals can be permanently deleted.' });
+    }
+
+    await Proposal.deleteOne({ _id: result.proposal._id });
+    return res.status(200).json({ message: 'Draft proposal deleted successfully.', deletedProposalId: req.params.id });
+  } catch (error) {
+    console.error('Draft deletion failed:', error.message);
+    return res.status(500).json({ message: 'Unable to delete draft proposal at this time.' });
+  }
+};
+
 const listPublishedProposals = async (req, res) => {
   try {
     await refreshProposalStatuses();
@@ -292,6 +311,7 @@ const getProposalDetails = async (req, res) => {
 module.exports = {
   cancelProposal,
   createProposal,
+  deleteDraft,
   getProposalDetails,
   listAdminProposals,
   listPublishedProposals,

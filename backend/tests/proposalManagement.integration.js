@@ -135,6 +135,14 @@ const run = async () => {
     const memberDraftDetail = await request(`/api/proposals/${initialDraft.id}`, { headers: { Authorization: `Bearer ${memberToken}` } });
     check('Draft detail is protected from normal member', memberDraftDetail.status === 403, JSON.stringify(memberDraftDetail.body));
 
+    const deletableDraft = await createDraft(`Sprint 1 Deletable Draft ${suffix}`, 60, 120, adminToken);
+    const missingDelete = await request('/api/proposals/507f1f77bcf86cd799439011/draft', jsonOptions('DELETE', undefined, adminToken));
+    check('Missing draft deletion returns not found', missingDelete.status === 404, JSON.stringify(missingDelete.body));
+    const blockedDelete = await request(`/api/proposals/${deletableDraft.id}/draft`, jsonOptions('DELETE', undefined, memberToken));
+    check('Normal member cannot delete a draft', blockedDelete.status === 403, JSON.stringify(blockedDelete.body));
+    const deletedDraft = await request(`/api/proposals/${deletableDraft.id}/draft`, jsonOptions('DELETE', undefined, adminToken));
+    check('Co-op Admin can permanently delete a draft', deletedDraft.status === 200 && deletedDraft.body.deletedProposalId === deletableDraft.id, JSON.stringify(deletedDraft.body));
+
     const editedDraft = await request(
       `/api/proposals/${initialDraft.id}/draft`,
       jsonOptions('PATCH', { title: `Updated Sprint 1 Active Proposal ${suffix}` }, adminToken)
@@ -152,6 +160,13 @@ const run = async () => {
     const upcomingProposal = await publish(upcomingDraft.id, adminToken, 'upcoming');
     const closedDraft = await createDraft(`Sprint 1 Closed Proposal ${suffix}`, -40, -20, adminToken);
     const closedProposal = await publish(closedDraft.id, adminToken, 'closed');
+
+    const activeDelete = await request(`/api/proposals/${activeProposal.id}/draft`, jsonOptions('DELETE', undefined, adminToken));
+    check('Active proposal cannot be permanently deleted', activeDelete.status === 409, JSON.stringify(activeDelete.body));
+    const upcomingDelete = await request(`/api/proposals/${upcomingProposal.id}/draft`, jsonOptions('DELETE', undefined, adminToken));
+    check('Upcoming proposal cannot be permanently deleted', upcomingDelete.status === 409, JSON.stringify(upcomingDelete.body));
+    const closedDelete = await request(`/api/proposals/${closedProposal.id}/draft`, jsonOptions('DELETE', undefined, adminToken));
+    check('Closed proposal cannot be permanently deleted', closedDelete.status === 409, JSON.stringify(closedDelete.body));
 
     const list = await request('/api/proposals', { headers: { Authorization: `Bearer ${memberToken}` } });
     const visible = list.body.proposals || [];
@@ -183,6 +198,9 @@ const run = async () => {
       jsonOptions('POST', { cancellationReason: 'Verification cancellation reason.' }, adminToken)
     );
     check('Admin can cancel published proposal with a reason', cancelled.status === 200 && cancelled.body.proposal.status === 'cancelled' && cancelled.body.proposal.cancellationReason === 'Verification cancellation reason.', JSON.stringify(cancelled.body));
+
+    const cancelledDelete = await request(`/api/proposals/${activeProposal.id}/draft`, jsonOptions('DELETE', undefined, adminToken));
+    check('Cancelled proposal cannot be permanently deleted', cancelledDelete.status === 409, JSON.stringify(cancelledDelete.body));
 
     const afterCancellation = await request('/api/proposals', { headers: { Authorization: `Bearer ${memberToken}` } });
     check('Cancelled proposal is hidden from normal active listing', afterCancellation.status === 200 && !afterCancellation.body.proposals.some((proposal) => proposal.id === activeProposal.id), JSON.stringify(afterCancellation.body));

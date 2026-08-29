@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import AppHeader from '../components/AppHeader';
+import CommunityNavigator from './CommunityNavigator';
 import LoginScreen from '../screens/LoginScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -21,12 +22,7 @@ const tabIcons = {
 
 function AuthNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        animation: 'fade',
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ animation: 'fade', headerShown: false }}>
       <Stack.Screen component={LoginScreen} name="Login" />
       <Stack.Screen component={RegisterScreen} name="Register" />
     </Stack.Navigator>
@@ -42,24 +38,10 @@ function MainTabs() {
         tabBarActiveBackgroundColor: '#EAF5EC',
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: '#748179',
-        tabBarIcon: ({ color, size }) => (
-          <MaterialCommunityIcons
-            color={color}
-            name={tabIcons[route.name]}
-            size={size}
-          />
-        ),
+        tabBarIcon: ({ color, size }) => <MaterialCommunityIcons color={color} name={tabIcons[route.name]} size={size} />,
         tabBarIconStyle: { marginTop: 1 },
-        tabBarItemStyle: {
-          borderRadius: 10,
-          marginHorizontal: 2,
-          minHeight: 54,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-          marginBottom: 3,
-        },
+        tabBarItemStyle: { borderRadius: 10, marginHorizontal: 2, minHeight: 54 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginBottom: 3 },
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E3EAE5',
@@ -69,45 +51,16 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen
-        name="Dashboard"
-        options={{ tabBarAccessibilityLabel: 'Open Dashboard' }}
-      >
-        {() => <PlaceholderScreen area="Dashboard" />}
-      </Tab.Screen>
-
-      <Tab.Screen
-        name="Energy Sharing"
-        options={{ tabBarAccessibilityLabel: 'Open Energy Sharing' }}
-      >
-        {() => <PlaceholderScreen area="Energy Sharing" />}
-      </Tab.Screen>
-
-      <Tab.Screen
-        name="Community"
-        options={{ tabBarAccessibilityLabel: 'Open Community' }}
-      >
-        {() => <PlaceholderScreen area="Community" />}
-      </Tab.Screen>
-
-      <Tab.Screen
-        name="My Impact"
-        options={{ tabBarAccessibilityLabel: 'Open My Impact' }}
-      >
-        {() => <PlaceholderScreen area="My Impact" />}
-      </Tab.Screen>
+      <Tab.Screen name="Dashboard" options={{ tabBarAccessibilityLabel: 'Open Dashboard' }}>{() => <PlaceholderScreen area="Dashboard" />}</Tab.Screen>
+      <Tab.Screen name="Energy Sharing" options={{ tabBarAccessibilityLabel: 'Open Energy Sharing' }}>{() => <PlaceholderScreen area="Energy Sharing" />}</Tab.Screen>
+      <Tab.Screen component={CommunityNavigator} name="Community" options={{ tabBarAccessibilityLabel: 'Open Community' }} />
+      <Tab.Screen name="My Impact" options={{ tabBarAccessibilityLabel: 'Open My Impact' }}>{() => <PlaceholderScreen area="My Impact" />}</Tab.Screen>
     </Tab.Navigator>
   );
 }
 
 export default function AppNavigator() {
-  const isAuthenticated = useAuthStore(
-    (state) => state.isAuthenticated
-  );
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  return (
-    <NavigationContainer>
-      {isAuthenticated ? <MainTabs /> : <AuthNavigator />}
-    </NavigationContainer>
-  );
+  return <NavigationContainer>{isAuthenticated ? <MainTabs /> : <AuthNavigator />}</NavigationContainer>;
 }
