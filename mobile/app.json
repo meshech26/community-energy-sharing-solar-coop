@@ -20,6 +20,9 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bunder": "metro"
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
