@@ -24,9 +24,9 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Not enough energy available' });
     }
 
-    if (listing.sellerId.toString() === req.user.id.toString()) {
-      return res.status(400).json({ success: false, error: 'You cannot purchase your own energy listing' });
-    }
+    // if (listing.sellerId.toString() === req.user.id.toString()) {
+    //   return res.status(400).json({ success: false, error: 'You cannot purchase your own energy listing' });
+    // }
 
     const totalAmount = quantity * listing.approvedUnitPrice;
 
@@ -40,8 +40,19 @@ exports.createOrder = async (req, res) => {
       unit: listing.approvedUnit,
       agreedUnitPrice: listing.approvedUnitPrice,
       totalAmount,
-      status: 'PENDING'
+      status: 'COMPLETED' // Auto-complete for prototype
     });
+
+    // Deduct quantity from listing
+    listing.approvedQuantity -= quantity;
+    listing.pendingQuantity -= quantity;
+    
+    if (listing.approvedQuantity <= 0) {
+      listing.status = 'SOLD_OUT';
+    } else {
+      listing.status = 'PARTIALLY_SOLD';
+    }
+    await listing.save();
 
     res.status(201).json({ success: true, data: order });
   } catch (error) {

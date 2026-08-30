@@ -16,7 +16,9 @@ require('./models/User');
 
 // Routes
 const energyRoutes = require('./routes/energyRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 app.use('/api/energy', energyRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/', (req, res) => {
   res.json({

@@ -13,7 +13,10 @@ exports.createListing = async (req, res) => {
       pendingQuantity: quantity,
       pendingUnit: unit || 'kWh',
       pendingUnitPrice: unitPrice,
-      availableDate,
+      approvedQuantity: 0,
+      approvedUnit: unit || 'kWh',
+      approvedUnitPrice: 0,
+      availableDate: availableDate ? new Date(availableDate) : new Date(),
       description,
       status: 'PENDING_APPROVAL'
     });
@@ -30,10 +33,8 @@ exports.createListing = async (req, res) => {
 exports.getActiveListings = async (req, res) => {
   try {
     const listings = await EnergyListing.find({
-      $or: [
-        { status: { $in: ['ACTIVE', 'PARTIALLY_SOLD'] } },
-        { status: 'PENDING_APPROVAL', approvedQuantity: { $gt: 0 } }
-      ]
+      status: { $in: ['ACTIVE', 'PARTIALLY_SOLD'] },
+      approvedQuantity: { $gt: 0 }
     }).populate('sellerId', 'name email');
 
     res.status(200).json({ success: true, count: listings.length, data: listings });
