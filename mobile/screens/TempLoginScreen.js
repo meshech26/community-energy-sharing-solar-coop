@@ -15,7 +15,7 @@ export default function TempLoginScreen({ navigation }) {
     try {
       const res = await client.post("/auth/login", { email, password });
       login(res.data.user, res.data.token);
-      navigation.replace("Progress");
+      navigation.replace("Main");
     } catch (err) {
       Alert.alert("Login failed", err.response?.data?.message || err.message);
     } finally {
