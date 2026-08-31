@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSustainabilityStore } from "../store/sustainabilityStore";
 import ScreenHeader from "../components/ScreenHeader";
 import Card from "../components/Card";
@@ -28,11 +29,8 @@ export default function SetGoalScreen({ navigation }) {
   };
 
   return (
-    <View className="flex-1 bg-surface px-6 pt-16">
-      <ScreenHeader
-        eyebrow={goal ? "Update" : "Get started"}
-        title={goal ? "Update your goal" : "Set your goal"}
-      />
+    <SafeAreaView edges={["top"]} className="flex-1 bg-surface px-6">
+      <ScreenHeader eyebrow={goal ? "Update" : "Get started"} title={goal ? "Update your goal" : "Set your goal"} />
 
       {suggestedTarget !== null && (
         <Card className="mb-6 bg-sun-light border-sun/20">
@@ -60,6 +58,6 @@ export default function SetGoalScreen({ navigation }) {
       <View className="mt-4">
         <PrimaryButton label={goal ? "Update goal" : "Confirm and save goal"} onPress={handleSave} loading={loading} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

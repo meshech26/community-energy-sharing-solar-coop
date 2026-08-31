@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Switch, ActivityIndicator } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, FlatList, Switch, ActivityIndicator, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSustainabilityStore } from "../store/sustainabilityStore";
 import ScreenHeader from "../components/ScreenHeader";
 import Card from "../components/Card";
@@ -7,6 +8,7 @@ import Card from "../components/Card";
 export default function LeaderboardScreen() {
   const { goal, leaderboard, loadLeaderboard, toggleLeaderboardOptIn, loading } = useSustainabilityStore();
   const [optIn, setOptIn] = useState(goal?.leaderboardOptIn ?? false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => { loadLeaderboard(); }, []);
   useEffect(() => { if (goal) setOptIn(goal.leaderboardOptIn); }, [goal]);
@@ -17,8 +19,14 @@ export default function LeaderboardScreen() {
     loadLeaderboard();
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadLeaderboard();
+    setRefreshing(false);
+  }, []);
+
   return (
-    <View className="flex-1 bg-surface px-6 pt-16">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-surface px-6">
       <ScreenHeader eyebrow="Community" title="Co-op leaderboard" />
 
       <Card className="flex-row items-center justify-between mb-6">
@@ -28,12 +36,12 @@ export default function LeaderboardScreen() {
 
       {loading && leaderboard.length === 0 ? (
         <ActivityIndicator size="large" color="#1F6F4B" />
-      ) : leaderboard.length === 0 ? (
-        <Text className="text-muted text-center mt-10">No opted-in households yet.</Text>
       ) : (
         <FlatList
           data={leaderboard}
           keyExtractor={(item) => String(item.rank)}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1F6F4B" />}
+          ListEmptyComponent={<Text className="text-muted text-center mt-10">No opted-in households yet.</Text>}
           renderItem={({ item }) => (
             <Card className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center">
@@ -47,6 +55,6 @@ export default function LeaderboardScreen() {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

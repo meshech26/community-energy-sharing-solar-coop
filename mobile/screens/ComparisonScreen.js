@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSustainabilityStore } from "../store/sustainabilityStore";
 import ScreenHeader from "../components/ScreenHeader";
 import Card from "../components/Card";
@@ -12,26 +13,26 @@ export default function ComparisonScreen() {
 
   if (loading && !comparison) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
+      <SafeAreaView edges={["top"]} className="flex-1 items-center justify-center bg-surface">
         <ActivityIndicator size="large" color="#1F6F4B" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!comparison?.comparisonAvailable) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface px-8">
+      <SafeAreaView edges={["top"]} className="flex-1 items-center justify-center bg-surface px-8">
         <Text className="text-base text-muted text-center">
           {comparison?.message || "Log at least two months of usage to see a comparison."}
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   const { previousMonth, currentMonth, previousUsageKwh, currentUsageKwh, actualReductionPercent, targetPercentReduction, isAheadOfTarget } = comparison;
 
   return (
-    <View className="flex-1 bg-surface px-6 pt-16">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-surface px-6">
       <ScreenHeader eyebrow="Trend" title="Month over month" />
 
       <Card className="mb-6">
@@ -56,15 +57,12 @@ export default function ComparisonScreen() {
         />
       </Card>
 
-      <StatusChip
-        tone={isAheadOfTarget ? "primary" : "sun"}
-        label={isAheadOfTarget ? "Ahead of target" : "Behind target"}
-      />
+      <StatusChip tone={isAheadOfTarget ? "primary" : "sun"} label={isAheadOfTarget ? "Ahead of target" : "Behind target"} />
       <Text className="text-sm text-muted mt-2 leading-5">
         {isAheadOfTarget
           ? "Great work — you're ahead of your target this month."
           : "You're a little behind this month — check the tip on your dashboard."}
       </Text>
-    </View>
+    </SafeAreaView>
   );
 }
