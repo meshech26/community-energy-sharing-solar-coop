@@ -3,11 +3,24 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } fr
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
-export default function TransactionHistoryScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState('Purchases');
+export default function TransactionHistoryScreen({ navigation, route }) {
+  const { logout } = useAuthStore();
+  const [activeTab, setActiveTab] = useState(route?.params?.initialTab || 'Purchases');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleLogout = () => {
+    logout();
+    navigation.replace('Login');
+  };
+
+  useEffect(() => {
+    if (route?.params?.initialTab) {
+      setActiveTab(route.params.initialTab);
+    }
+  }, [route?.params?.initialTab]);
 
   // Fallback dummy data if backend fails
   const dummyPurchases = [
@@ -64,11 +77,17 @@ export default function TransactionHistoryScreen({ navigation }) {
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 bg-white border-b border-gray-100">
         <View className="flex-row items-center">
-          <Text className="text-[#0f6b4b] text-xl font-bold mr-1">.</Text>
-          <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs')} 
+            className="mr-3 flex-row items-center"
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />
+          </TouchableOpacity>
+          <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
+          <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <MaterialCommunityIcons name="logout" size={24} color="#333" />
+        <TouchableOpacity onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={22} color="#0f6b4b" />
         </TouchableOpacity>
       </View>
 

@@ -4,8 +4,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 export default function AdminApprovalsScreen({ navigation }) {
+  const { user } = useAuthStore();
+  const isCoopAdmin = Boolean(user?.isCoopAdmin);
   const [activeTab, setActiveTab] = useState('New Listings');
   const [pendingListings, setPendingListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +98,38 @@ export default function AdminApprovalsScreen({ navigation }) {
       Alert.alert('Error', 'Failed to decline listing.');
     }
   };
+
+  if (!isCoopAdmin) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="flex-row items-center px-4 py-4 border-b border-gray-100 bg-white">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 flex-row items-center">
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>Access Restricted</Text>
+        </View>
+
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="bg-red-100 p-4 rounded-full mb-4">
+            <MaterialCommunityIcons name="shield-lock-outline" size={48} color="#dc2626" />
+          </View>
+          <Text className="text-2xl font-bold text-gray-900 mb-2 text-center" style={{ fontFamily: 'serif' }}>
+            Administrator Access Only
+          </Text>
+          <Text className="text-gray-600 text-sm text-center mb-6 leading-5">
+            Admin Approvals and the ability to Approve / Decline energy trades is reserved for cooperative administrators (isCoopAdmin: true).
+          </Text>
+
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            className="w-full bg-[#0f6b4b] py-3.5 rounded-xl items-center"
+          >
+            <Text className="text-white font-bold text-base">Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">

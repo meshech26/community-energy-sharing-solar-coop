@@ -1,18 +1,29 @@
 const User = require('../models/User');
 
-// Shared JWT authentication middleware
+// Shared authentication middleware with role header support
 exports.protect = async (req, res, next) => {
   try {
-    // For prototyping, bypass JWT and grab a real user from DB
-    const dummyUser = await User.findOne({ email: 'user@solarcoop.com' });
-    if (!dummyUser) {
-      return res.status(401).json({ success: false, error: 'Dummy user not found. Please run seed script.' });
+    const roleHeader = req.headers['x-user-role'];
+    const emailHeader = req.headers['x-user-email'];
+    const isAdmin = roleHeader === 'admin' || emailHeader === 'admin@solarcoop.com';
+
+    const targetEmail = isAdmin ? 'admin@solarcoop.com' : (emailHeader || 'user@solarcoop.com');
+    let user = await User.findOne({ email: targetEmail });
+    if (!user) {
+      user = await User.findOne({ isCoopAdmin: isAdmin });
+    }
+    if (!user) {
+      user = await User.findOne();
+    }
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not found in database. Please run seed script.' });
     }
     
     req.user = {
-      id: dummyUser._id,
-      householdId: dummyUser.householdId,
-      isCoopAdmin: dummyUser.isCoopAdmin
+      id: user._id,
+      householdId: user.householdId,
+      isCoopAdmin: user.isCoopAdmin,
+      email: user.email,
     };
     next();
   } catch (error) {
@@ -22,9 +33,9 @@ exports.protect = async (req, res, next) => {
 
 // Admin middleware
 exports.admin = (req, res, next) => {
-  if (req.user) {
+  if (req.user && req.user.isCoopAdmin) {
     next();
   } else {
-    res.status(403).json({ success: false, error: 'Not authorized as admin' });
+    res.status(403).json({ success: false, error: 'Not authorized as cooperative admin' });
   }
 };

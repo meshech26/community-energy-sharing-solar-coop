@@ -2,8 +2,18 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '../store/authStore';
 
 export default function DashboardScreen({ navigation }) {
+  const { user, logout } = useAuthStore();
+  const isCoopAdmin = Boolean(user?.isCoopAdmin);
+  const userName = user?.name || (isCoopAdmin ? 'Co-op Admin' : 'Kavindi');
+
+  const handleLogout = () => {
+    logout();
+    navigation.replace('Login');
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
@@ -12,28 +22,35 @@ export default function DashboardScreen({ navigation }) {
           <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
           <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <TouchableOpacity onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={24} color="#0f6b4b" />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 bg-white px-4 pt-4">
-        {/* Admin Approvals Banner */}
-        <TouchableOpacity 
-          className="bg-[#e2e8e4] p-4 rounded-xl flex-row items-center justify-between mb-6"
-          onPress={() => navigation.navigate('AdminApprovals')}
-        >
-          <View className="flex-row items-center flex-1">
-            <MaterialCommunityIcons name="shield-check-outline" size={24} color="#0f6b4b" className="mr-3" />
-            <View className="flex-1 ml-2">
-              <Text className="font-semibold text-gray-800 text-sm">Admin Approvals</Text>
-              <Text className="text-gray-500 text-xs">You have 3 pending cooperative requests.</Text>
+        {/* Admin Approvals Banner - Only visible to Admin (isCoopAdmin: true) */}
+        {isCoopAdmin && (
+          <TouchableOpacity 
+            className="bg-[#e2e8e4] p-4 rounded-xl flex-row items-center justify-between mb-6 border border-emerald-200"
+            onPress={() => navigation.navigate('AdminApprovals')}
+          >
+            <View className="flex-row items-center flex-1">
+              <MaterialCommunityIcons name="shield-check-outline" size={24} color="#0f6b4b" className="mr-3" />
+              <View className="flex-1 ml-2">
+                <View className="flex-row items-center">
+                  <Text className="font-semibold text-gray-800 text-sm">Admin Approvals</Text>
+                  <View className="bg-[#0f6b4b] px-1.5 py-0.5 rounded ml-2">
+                    <Text className="text-white text-[9px] font-bold">Only Admin</Text>
+                  </View>
+                </View>
+                <Text className="text-gray-500 text-xs">You have 3 pending cooperative requests.</Text>
+              </View>
             </View>
-          </View>
-          <Text className="text-[#0f6b4b] font-bold text-sm ml-2">Review</Text>
-        </TouchableOpacity>
+            <Text className="text-[#0f6b4b] font-bold text-sm ml-2">Review</Text>
+          </TouchableOpacity>
+        )}
 
-        <Text className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'serif' }}>Hello, Kavindi</Text>
+        <Text className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'serif' }}>Hello, {userName}</Text>
         <Text className="text-gray-600 mb-6 text-sm">Here is your energy summary for today.</Text>
 
         {/* Current Status Card */}
@@ -100,7 +117,7 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity 
             className="flex-1 bg-white border border-gray-300 px-2 py-2.5 rounded-full flex-row items-center justify-center mr-2"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('TransactionHistory', { initialTab: 'Purchases' })}
           >
             <MaterialCommunityIcons name="text-box-outline" size={14} color="#333" className="mr-1.5" />
             <Text className="text-gray-800 text-xs font-semibold">My Orders</Text>
