@@ -8,7 +8,10 @@ export default function ListingDetailsScreen({ navigation, route }) {
 
   const maxQuantity = listing?.approvedQuantity > 0 ? listing?.approvedQuantity : (listing?.pendingQuantity || 8);
   const price = listing?.approvedUnitPrice > 0 ? listing?.approvedUnitPrice : (listing?.pendingUnitPrice || 42);
-  const sellerName = listing?.sellerId?.name || 'Household A';
+  let sellerName = listing?.sellerId?.name || 'Community Member';
+  if (sellerName === 'Regular User') {
+    sellerName = 'Kavindi Perera';
+  }
   const unit = listing?.approvedUnit || 'kWh';
   
   const [purchaseQuantity, setPurchaseQuantity] = useState(Math.min(6, maxQuantity));

@@ -8,7 +8,7 @@ import { useAuthStore } from '../store/authStore';
 
 export default function MyListingsScreen({ navigation }) {
   const { logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('Active & Pending');
+  const [activeTab, setActiveTab] = useState('Active'); // 'Active' | 'Pending' | 'History'
   const [dbListings, setDbListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,16 +64,44 @@ export default function MyListingsScreen({ navigation }) {
     try {
       const res = await axios.get('http://127.0.0.1:5000/api/energy/listings/my');
       if (res.data?.data) {
-        const mapped = res.data.data.map((item, idx) => ({
-          id: item._id || `db-${idx}`,
-          title: item.description ? (item.description.length > 25 ? item.description.slice(0, 25) + '...' : item.description) : `Solar Share - ${item.pendingQuantity || item.approvedQuantity} kWh`,
-          description: item.description || 'Excess residential solar energy allocation.',
-          status: item.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : (item.status || 'ACTIVE'),
-          qty: `${item.pendingQuantity || item.approvedQuantity} ${item.pendingUnit || 'kWh'}`,
-          price: `${item.pendingUnitPrice || item.approvedUnitPrice} LKR/kWh`,
-          progress: item.status === 'ACTIVE' ? 0.7 : 0,
-          left: item.status === 'PENDING_APPROVAL' ? 'Awaiting review' : `${item.approvedQuantity || item.pendingQuantity} kWh left`
-        }));
+        const mapped = res.data.data.map((item, idx) => {
+          const approvedQty = Number(item.approvedQuantity !== undefined ? item.approvedQuantity : 0);
+          const pendingQty = Number(item.pendingQuantity !== undefined ? item.pendingQuantity : 0);
+          const totalQty = approvedQty > 0 ? approvedQty : pendingQty;
+          const price = item.approvedUnitPrice > 0 ? item.approvedUnitPrice : (item.pendingUnitPrice || 0);
+
+          let normStatus = 'ACTIVE';
+          if (item.status === 'PENDING_APPROVAL' || item.status === 'PENDING APPROVAL') {
+            normStatus = 'PENDING APPROVAL';
+          } else if (
+            item.status === 'SOLD_OUT' || 
+            item.status === 'SOLD OUT' || 
+            item.status === 'COMPLETED' || 
+            (approvedQty <= 0 && item.status !== 'PENDING_APPROVAL' && item.status !== 'DECLINED')
+          ) {
+            normStatus = 'SOLD OUT';
+          } else if (item.status === 'DECLINED') {
+            normStatus = 'DECLINED';
+          } else if (item.status === 'CANCELLED') {
+            normStatus = 'CANCELLED';
+          } else {
+            normStatus = 'ACTIVE';
+          }
+
+          const isSold = normStatus === 'SOLD OUT';
+          const isPending = normStatus === 'PENDING APPROVAL';
+
+          return {
+            id: item._id || `db-${idx}`,
+            title: item.description ? (item.description.length > 25 ? item.description.slice(0, 25) + '...' : item.description) : `Solar Share - ${totalQty} kWh`,
+            description: item.description || 'Excess residential solar energy allocation.',
+            status: normStatus,
+            qty: `${totalQty} ${item.approvedUnit || item.pendingUnit || 'kWh'}`,
+            price: `${price} LKR/kWh`,
+            progress: isSold ? 1 : (isPending ? 0 : 0.7),
+            left: isSold ? '' : (isPending ? 'Awaiting review' : `${approvedQty} kWh left`)
+          };
+        });
         setDbListings(mapped);
       }
     } catch (e) {
@@ -92,11 +120,16 @@ export default function MyListingsScreen({ navigation }) {
   // Combine database listings with default mock listings
   const combinedListings = [...dbListings, ...defaultListings];
   
-  // Filter for tabs
-  const activeAndPendingListings = combinedListings.filter(l => l.status !== 'SOLD OUT');
-  const historyListings = combinedListings.filter(l => l.status === 'SOLD OUT' || l.status === 'COMPLETED');
+  // Filter for separate sections: Active, Pending, History
+  const activeListings = combinedListings.filter(l => l.status === 'ACTIVE');
+  const pendingListings = combinedListings.filter(l => l.status === 'PENDING APPROVAL');
+  const historyListings = combinedListings.filter(
+    l => l.status === 'SOLD OUT' || l.status === 'COMPLETED' || l.status === 'DECLINED' || l.status === 'CANCELLED'
+  );
   
-  const displayedListings = activeTab === 'Active & Pending' ? activeAndPendingListings : historyListings;
+  const displayedListings = 
+    activeTab === 'Active' ? activeListings :
+    activeTab === 'Pending' ? pendingListings : historyListings;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -129,33 +162,82 @@ export default function MyListingsScreen({ navigation }) {
           <Text className="text-white font-bold ml-1" style={{ fontFamily: 'serif' }}>Create New Listing</Text>
         </TouchableOpacity>
 
-        {/* Custom Tabs */}
+        {/* Custom Tabs: Separate Active, Pending, and History */}
         <View className="flex-row border-b border-gray-200 mb-4">
           <TouchableOpacity 
-            className={`pb-3 px-2 mr-6 flex-row items-center ${activeTab === 'Active & Pending' ? 'border-b-2 border-[#0f6b4b]' : ''}`}
-            onPress={() => setActiveTab('Active & Pending')}
+            className={`pb-3 px-3 mr-3 flex-row items-center ${activeTab === 'Active' ? 'border-b-2 border-[#0f6b4b]' : ''}`}
+            onPress={() => setActiveTab('Active')}
           >
-            <Text className={`font-bold mr-2 text-sm ${activeTab === 'Active & Pending' ? 'text-[#0f6b4b]' : 'text-gray-500'}`} style={{ fontFamily: 'serif' }}>Active & Pending</Text>
-            <View className="bg-gray-200 rounded-full h-5 w-5 items-center justify-center">
-              <Text className="text-[10px] text-gray-600 font-bold">{activeAndPendingListings.length}</Text>
+            <Text className={`font-bold mr-1.5 text-sm ${activeTab === 'Active' ? 'text-[#0f6b4b]' : 'text-gray-500'}`} style={{ fontFamily: 'serif' }}>Active</Text>
+            <View className={`rounded-full h-5 px-1.5 items-center justify-center ${activeTab === 'Active' ? 'bg-[#dcefe5]' : 'bg-gray-200'}`}>
+              <Text className={`text-[10px] font-bold ${activeTab === 'Active' ? 'text-[#0f6b4b]' : 'text-gray-600'}`}>{activeListings.length}</Text>
             </View>
           </TouchableOpacity>
+
           <TouchableOpacity 
-            className={`pb-3 px-2 ${activeTab === 'History' ? 'border-b-2 border-[#0f6b4b]' : ''}`}
+            className={`pb-3 px-3 mr-3 flex-row items-center ${activeTab === 'Pending' ? 'border-b-2 border-[#0f6b4b]' : ''}`}
+            onPress={() => setActiveTab('Pending')}
+          >
+            <Text className={`font-bold mr-1.5 text-sm ${activeTab === 'Pending' ? 'text-[#0f6b4b]' : 'text-gray-500'}`} style={{ fontFamily: 'serif' }}>Pending</Text>
+            <View className={`rounded-full h-5 px-1.5 items-center justify-center ${activeTab === 'Pending' ? 'bg-[#ffeedd]' : 'bg-gray-200'}`}>
+              <Text className={`text-[10px] font-bold ${activeTab === 'Pending' ? 'text-orange-800' : 'text-gray-600'}`}>{pendingListings.length}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            className={`pb-3 px-3 flex-row items-center ${activeTab === 'History' ? 'border-b-2 border-[#0f6b4b]' : ''}`}
             onPress={() => setActiveTab('History')}
           >
-            <Text className={`font-bold text-sm ${activeTab === 'History' ? 'text-[#0f6b4b]' : 'text-gray-500'}`} style={{ fontFamily: 'serif' }}>History</Text>
+            <Text className={`font-bold mr-1.5 text-sm ${activeTab === 'History' ? 'text-[#0f6b4b]' : 'text-gray-500'}`} style={{ fontFamily: 'serif' }}>History</Text>
+            <View className={`rounded-full h-5 px-1.5 items-center justify-center ${activeTab === 'History' ? 'bg-gray-300' : 'bg-gray-200'}`}>
+              <Text className="text-[10px] text-gray-600 font-bold">{historyListings.length}</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView className="flex-1 px-4 bg-[#f9f9f9]">
-        {displayedListings.map(item => {
+        {loading ? (
+          <ActivityIndicator size="large" color="#0f6b4b" className="mt-10" />
+        ) : displayedListings.length === 0 ? (
+          <View className="items-center justify-center py-12 px-4 bg-white rounded-2xl border border-gray-200 my-4">
+            <MaterialCommunityIcons 
+              name={
+                activeTab === 'Active' ? 'solar-power' : 
+                activeTab === 'Pending' ? 'clock-outline' : 'history'
+              } 
+              size={40} 
+              color="#9ca3af" 
+              className="mb-3" 
+            />
+            <Text className="text-base font-bold text-gray-800 mb-1" style={{ fontFamily: 'serif' }}>
+              No {activeTab} Listings
+            </Text>
+            <Text className="text-xs text-gray-500 text-center mb-4 leading-5 px-4">
+              {activeTab === 'Active'
+                ? 'You have no active energy listings right now. Click "Create New Listing" to share surplus energy with the community.'
+                : activeTab === 'Pending'
+                ? 'You have no listings waiting for co-op administrator review.'
+                : 'Sold out and completed energy listings will appear here.'}
+            </Text>
+            {activeTab === 'Active' && (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('SellEnergy')}
+                className="bg-[#0f6b4b] px-4 py-2 rounded-lg flex-row items-center"
+              >
+                <MaterialCommunityIcons name="plus" size={14} color="#fff" className="mr-1.5" />
+                <Text className="text-white text-xs font-bold">Create New Listing</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          displayedListings.map(item => {
           const isSoldOut = item.status === 'SOLD OUT';
           const isPending = item.status === 'PENDING APPROVAL';
+          const isDeclined = item.status === 'DECLINED' || item.status === 'CANCELLED';
           
           let statusBg = 'bg-green-100';
-          let statusText = 'text-primary';
+          let statusText = 'text-[#0f6b4b]';
           let icon = 'check-decagram';
           
           if (isPending) {
@@ -166,13 +248,19 @@ export default function MyListingsScreen({ navigation }) {
             statusBg = 'bg-gray-200';
             statusText = 'text-gray-600';
             icon = 'close-box-outline';
+          } else if (isDeclined) {
+            statusBg = 'bg-red-100';
+            statusText = 'text-red-700';
+            icon = 'alert-circle-outline';
           }
+
+          const iconColor = isPending ? '#9a3412' : (isSoldOut ? '#4b5563' : (isDeclined ? '#b91c1c' : '#0f6b4b'));
 
           return (
             <View key={item.id} className="bg-white rounded-xl p-5 mb-4 border border-gray-200 shadow-sm">
               <View className="flex-row justify-between items-start mb-4">
                 <View className={`${statusBg} px-2 py-1 rounded-full flex-row items-center`}>
-                  <MaterialCommunityIcons name={icon} size={12} color={isPending ? '#9a3412' : (isSoldOut ? '#4b5563' : '#0f6b4b')} />
+                  <MaterialCommunityIcons name={icon} size={12} color={iconColor} />
                   <Text className={`text-[10px] ${statusText} font-bold ml-1 tracking-wider`}>{item.status}</Text>
                 </View>
                 <TouchableOpacity>
@@ -207,7 +295,7 @@ export default function MyListingsScreen({ navigation }) {
               )}
             </View>
           );
-        })}
+        }))}
         <View className="h-10" />
       </ScrollView>
     </SafeAreaView>

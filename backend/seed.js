@@ -29,16 +29,26 @@ const seedData = async () => {
       householdId: adminHouseholdId
     });
 
-    // Create User
+    // Create Member 1 (Kavindi Perera)
     const user = await User.create({
-      name: 'Regular User',
+      name: 'Kavindi Perera',
       email: 'user@solarcoop.com',
       password: hashedPassword,
       isCoopAdmin: false,
       householdId: userHouseholdId
     });
 
-    console.log('Seed users created.');
+    // Create Member 2 (Sunil Fernando)
+    const member2HouseholdId = new mongoose.Types.ObjectId();
+    const member2 = await User.create({
+      name: 'Sunil Fernando',
+      email: 'sunil@solarcoop.com',
+      password: hashedPassword,
+      isCoopAdmin: false,
+      householdId: member2HouseholdId
+    });
+
+    console.log('Seed users created (Admin, Kavindi Perera, Sunil Fernando).');
 
     // Generate Tokens
     const generateToken = (user) => {

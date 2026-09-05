@@ -7,8 +7,16 @@ export const PRESET_USERS = {
     name: 'Kavindi Perera',
     email: 'user@solarcoop.com',
     isCoopAdmin: false,
-    roleTitle: 'Normal User',
+    roleTitle: 'Co-op Member',
     householdId: '#H-104',
+  },
+  member2: {
+    id: 'user-002',
+    name: 'Sunil Fernando',
+    email: 'sunil@solarcoop.com',
+    isCoopAdmin: false,
+    roleTitle: 'Co-op Member',
+    householdId: '#H-105',
   },
   admin: {
     id: 'admin-001',
@@ -33,7 +41,7 @@ export const useAuthStore = create((set, get) => ({
     }),
 
   loginWithRole: (roleType = 'normal') => {
-    const preset = roleType === 'admin' ? PRESET_USERS.admin : PRESET_USERS.normal;
+    const preset = PRESET_USERS[roleType] || PRESET_USERS.normal;
     set({
       user: { ...preset },
       token: `temp-token-${roleType}`,
@@ -54,7 +62,7 @@ export const useAuthStore = create((set, get) => ({
       user: {
         ...currentUser,
         isCoopAdmin: Boolean(isCoopAdmin),
-        roleTitle: isCoopAdmin ? 'Admin User' : 'Normal User',
+        roleTitle: isCoopAdmin ? 'Admin User' : 'Co-op Member',
       },
     });
   },
@@ -73,7 +81,7 @@ export const useAuthStore = create((set, get) => ({
     }),
 }));
 
-// Automatically inject role and email into all outgoing axios requests
+// Automatically inject role, email, and name into all outgoing axios requests
 axios.interceptors.request.use(
   (config) => {
     const user = useAuthStore.getState().user;
@@ -81,6 +89,7 @@ axios.interceptors.request.use(
       config.headers = config.headers || {};
       config.headers['x-user-role'] = user.isCoopAdmin ? 'admin' : 'normal';
       config.headers['x-user-email'] = user.email || '';
+      config.headers['x-user-name'] = user.name || '';
     }
     return config;
   },

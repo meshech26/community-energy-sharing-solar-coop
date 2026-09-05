@@ -4,7 +4,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore, PRESET_USERS } from '../store/authStore';
 
 export default function LoginScreen({ navigation }) {
-  const [selectedRole, setSelectedRole] = useState('normal'); // 'normal' | 'admin'
+  const [selectedRole, setSelectedRole] = useState('normal'); // 'normal' | 'member2' | 'admin'
+  const [name, setName] = useState(PRESET_USERS.normal.name);
   const [email, setEmail] = useState(PRESET_USERS.normal.email);
   const [password, setPassword] = useState('password123');
 
@@ -13,8 +14,13 @@ export default function LoginScreen({ navigation }) {
   const handleSelectRole = (role) => {
     setSelectedRole(role);
     if (role === 'admin') {
+      setName(PRESET_USERS.admin.name);
       setEmail(PRESET_USERS.admin.email);
+    } else if (role === 'member2') {
+      setName(PRESET_USERS.member2.name);
+      setEmail(PRESET_USERS.member2.email);
     } else {
+      setName(PRESET_USERS.normal.name);
       setEmail(PRESET_USERS.normal.email);
     }
   };
@@ -26,10 +32,13 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     const isAdmin = selectedRole === 'admin' || email.toLowerCase().includes('admin');
-    const basePreset = isAdmin ? PRESET_USERS.admin : PRESET_USERS.normal;
+    const basePreset = isAdmin 
+      ? PRESET_USERS.admin 
+      : (selectedRole === 'member2' ? PRESET_USERS.member2 : PRESET_USERS.normal);
 
     login({
       ...basePreset,
+      name: name || basePreset.name,
       email: email || basePreset.email,
       isCoopAdmin: isAdmin,
     });
@@ -55,9 +64,9 @@ export default function LoginScreen({ navigation }) {
           {/* Role Selection Box */}
           <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-6">
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Role (Dev / Temp)</Text>
+              <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Member (Dev / Testing)</Text>
               <View className="bg-amber-100 px-2 py-0.5 rounded-full">
-                <Text className="text-[10px] font-bold text-amber-800">Role-Based Auth</Text>
+                <Text className="text-[10px] font-bold text-amber-800">Co-op Auth</Text>
               </View>
             </View>
 
@@ -65,43 +74,46 @@ export default function LoginScreen({ navigation }) {
             <View className="flex-row bg-gray-200/70 p-1 rounded-xl mb-4">
               <TouchableOpacity
                 onPress={() => handleSelectRole('normal')}
-                className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center ${
+                className={`flex-1 py-2 rounded-lg items-center justify-center ${
                   selectedRole === 'normal' ? 'bg-white shadow-sm' : ''
                 }`}
               >
-                <MaterialCommunityIcons 
-                  name="account-outline" 
-                  size={16} 
-                  color={selectedRole === 'normal' ? '#0f6b4b' : '#6b7280'} 
-                  className="mr-1.5" 
-                />
                 <Text 
-                  className={`text-xs font-bold ${
+                  className={`text-[11px] font-bold ${
                     selectedRole === 'normal' ? 'text-[#0f6b4b]' : 'text-gray-600'
                   }`}
                 >
-                  Normal User
+                  Member 1
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleSelectRole('member2')}
+                className={`flex-1 py-2 rounded-lg items-center justify-center ${
+                  selectedRole === 'member2' ? 'bg-white shadow-sm' : ''
+                }`}
+              >
+                <Text 
+                  className={`text-[11px] font-bold ${
+                    selectedRole === 'member2' ? 'text-[#0f6b4b]' : 'text-gray-600'
+                  }`}
+                >
+                  Member 2
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => handleSelectRole('admin')}
-                className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center ${
+                className={`flex-1 py-2 rounded-lg items-center justify-center ${
                   selectedRole === 'admin' ? 'bg-white shadow-sm' : ''
                 }`}
               >
-                <MaterialCommunityIcons 
-                  name="shield-account-outline" 
-                  size={16} 
-                  color={selectedRole === 'admin' ? '#0f6b4b' : '#6b7280'} 
-                  className="mr-1.5" 
-                />
                 <Text 
-                  className={`text-xs font-bold ${
+                  className={`text-[11px] font-bold ${
                     selectedRole === 'admin' ? 'text-[#0f6b4b]' : 'text-gray-600'
                   }`}
                 >
-                  Admin User
+                  Admin
                 </Text>
               </TouchableOpacity>
             </View>
@@ -111,41 +123,59 @@ export default function LoginScreen({ navigation }) {
               <View className="flex-row items-center justify-between">
                 <View>
                   <Text className="text-xs font-bold text-gray-800">
-                    {selectedRole === 'admin' ? 'Co-op Administrator' : 'Co-op Member (Citizen)'}
+                    {selectedRole === 'admin' 
+                      ? 'Co-op Administrator' 
+                      : (selectedRole === 'member2' ? 'Sunil Fernando (Member 2)' : 'Kavindi Perera (Member 1)')}
                   </Text>
                   <Text className="text-[11px] text-gray-500">
                     {selectedRole === 'admin' 
-                      ? 'Full community features + Admin Approvals' 
-                      : 'Marketplace, Buy Energy, My Listings, My Orders'}
+                      ? 'Admin Approvals + Full Features' 
+                      : 'Marketplace, Sell Energy, My Listings, Orders'}
                   </Text>
                 </View>
                 <View className={`px-2 py-1 rounded-md ${selectedRole === 'admin' ? 'bg-purple-100' : 'bg-emerald-100'}`}>
                   <Text className={`text-[10px] font-bold ${selectedRole === 'admin' ? 'text-purple-800' : 'text-emerald-800'}`}>
-                    isCoopAdmin: {selectedRole === 'admin' ? 'true' : 'false'}
+                    {selectedRole === 'admin' ? 'Admin' : 'Member'}
                   </Text>
                 </View>
               </View>
             </View>
 
             {/* Quick 1-Tap Login Buttons */}
-            <View className="flex-row space-x-2 mt-2">
+            <View className="flex-row space-x-1.5 mt-2">
               <TouchableOpacity
                 onPress={() => handleQuickLogin('normal')}
-                className="flex-1 bg-emerald-50 border border-emerald-300 py-2.5 rounded-xl items-center mr-1"
+                className="flex-1 bg-emerald-50 border border-emerald-300 py-2 rounded-xl items-center mr-1"
               >
-                <Text className="text-emerald-800 text-xs font-bold">⚡ Quick Normal</Text>
+                <Text className="text-emerald-800 text-[11px] font-bold">⚡ Kavindi</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleQuickLogin('member2')}
+                className="flex-1 bg-teal-50 border border-teal-300 py-2 rounded-xl items-center mr-1"
+              >
+                <Text className="text-teal-800 text-[11px] font-bold">⚡ Sunil</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleQuickLogin('admin')}
-                className="flex-1 bg-purple-50 border border-purple-300 py-2.5 rounded-xl items-center ml-1"
+                className="flex-1 bg-purple-50 border border-purple-300 py-2 rounded-xl items-center"
               >
-                <Text className="text-purple-800 text-xs font-bold">🛡️ Quick Admin</Text>
+                <Text className="text-purple-800 text-[11px] font-bold">🛡️ Admin</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Form Fields */}
           <View className="space-y-4">
+            <View className="mb-3">
+              <Text className="text-gray-700 mb-1 ml-1 text-xs font-semibold">Member Name</Text>
+              <TextInput
+                className="w-full bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm"
+                placeholder="Enter your name"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+
             <View className="mb-3">
               <Text className="text-gray-700 mb-1 ml-1 text-xs font-semibold">Email Address</Text>
               <TextInput
@@ -178,7 +208,7 @@ export default function LoginScreen({ navigation }) {
               onPress={handleLogin}
             >
               <Text className="text-white font-bold text-base">
-                Sign In as {selectedRole === 'admin' ? 'Admin' : 'Normal User'}
+                Sign In as {selectedRole === 'admin' ? 'Admin' : (name || 'Member')}
               </Text>
             </TouchableOpacity>
           </View>

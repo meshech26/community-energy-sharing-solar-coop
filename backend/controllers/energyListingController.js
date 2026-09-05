@@ -27,15 +27,22 @@ exports.createListing = async (req, res) => {
   }
 };
 
-// @desc    Get all active approved listings
+// @desc    Get all active approved listings (excludes requesting user's own listings for marketplace buying)
 // @route   GET /api/energy/listings
 // @access  Private
 exports.getActiveListings = async (req, res) => {
   try {
-    const listings = await EnergyListing.find({
+    const query = {
       status: { $in: ['ACTIVE', 'PARTIALLY_SOLD'] },
       approvedQuantity: { $gt: 0 }
-    }).populate('sellerId', 'name email');
+    };
+
+    // Filter out current user's own listings so they only see energy available from other members
+    if (req.user && req.user.id && req.query.includeOwn !== 'true') {
+      query.sellerId = { $ne: req.user.id };
+    }
+
+    const listings = await EnergyListing.find(query).populate('sellerId', 'name email');
 
     res.status(200).json({ success: true, count: listings.length, data: listings });
   } catch (error) {

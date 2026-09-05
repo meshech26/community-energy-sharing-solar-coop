@@ -54,6 +54,23 @@ export default function MarketplaceScreen({ navigation }) {
   const maxP = parseFloat(maxPrice);
 
   const displayListings = rawListings.filter((item) => {
+    // Exclude current user's own listings from the buying section
+    if (user) {
+      const sellerObj = item.sellerId;
+      const sellerIdStr = typeof sellerObj === 'object' ? (sellerObj?._id || sellerObj?.id) : sellerObj;
+      const currentUserId = user.id || user._id;
+
+      if (sellerIdStr && currentUserId && sellerIdStr.toString() === currentUserId.toString()) {
+        return false;
+      }
+      if (sellerObj?.email && user.email && sellerObj.email.toLowerCase() === user.email.toLowerCase()) {
+        return false;
+      }
+      if (sellerObj?.name && user.name && sellerObj.name.trim().toLowerCase() === user.name.trim().toLowerCase()) {
+        return false;
+      }
+    }
+
     const qty = Number(item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity || item.quantity || 0);
     const price = Number(item.approvedUnitPrice > 0 ? item.approvedUnitPrice : item.pendingUnitPrice || item.unitPrice || 0);
 
@@ -167,23 +184,45 @@ export default function MarketplaceScreen({ navigation }) {
           <ActivityIndicator size="large" color="#0f6b4b" className="mt-10" />
         ) : displayListings.length === 0 ? (
           <View className="items-center justify-center py-10 px-4 bg-white rounded-2xl border border-gray-200 my-2">
-            <MaterialCommunityIcons name="filter-remove-outline" size={40} color="#9ca3af" className="mb-2" />
-            <Text className="text-base font-bold text-gray-800 mb-1" style={{ fontFamily: 'serif' }}>No Matching Listings</Text>
-            <Text className="text-xs text-gray-500 text-center mb-4">
-              No energy offers match Min: {minQuantity || '0'} kWh and Max: LKR {maxPrice || '∞'}/kWh.
+            <MaterialCommunityIcons 
+              name={hasActiveFilters ? "filter-remove-outline" : "solar-power"} 
+              size={44} 
+              color={hasActiveFilters ? "#9ca3af" : "#0f6b4b"} 
+              className="mb-3" 
+            />
+            <Text className="text-base font-bold text-gray-800 mb-1" style={{ fontFamily: 'serif' }}>
+              {hasActiveFilters ? 'No Matching Listings' : 'No Listings from Other Members'}
             </Text>
-            <TouchableOpacity 
-              onPress={() => { setMinQuantity(''); setMaxPrice(''); }}
-              className="bg-[#0f6b4b] px-4 py-2 rounded-lg"
-            >
-              <Text className="text-white text-xs font-bold">Clear Filters</Text>
-            </TouchableOpacity>
+            <Text className="text-xs text-gray-500 text-center mb-4 leading-5 px-2">
+              {hasActiveFilters 
+                ? `No energy offers match Min: ${minQuantity || '0'} kWh and Max: LKR ${maxPrice || '∞'}/kWh.`
+                : 'There are currently no energy listings from other community members. Energy you post will appear here for other members to purchase.'}
+            </Text>
+            {hasActiveFilters ? (
+              <TouchableOpacity 
+                onPress={() => { setMinQuantity(''); setMaxPrice(''); }}
+                className="bg-[#0f6b4b] px-4 py-2.5 rounded-lg"
+              >
+                <Text className="text-white text-xs font-bold">Clear Filters</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('MyListings')}
+                className="bg-[#0f6b4b] px-4 py-2.5 rounded-lg flex-row items-center"
+              >
+                <MaterialCommunityIcons name="format-list-bulleted" size={14} color="#fff" className="mr-1.5" />
+                <Text className="text-white text-xs font-bold">View My Listings</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           displayListings.map((item, index) => {
             const quantity = item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity;
             const price = item.approvedUnitPrice > 0 ? item.approvedUnitPrice : item.pendingUnitPrice;
-            const sellerName = item.sellerId?.name || 'Local Household';
+            let sellerName = item.sellerId?.name || 'Community Member';
+            if (sellerName === 'Regular User') {
+              sellerName = 'Kavindi Perera';
+            }
             const dateStr = item.availableDate || 'N/A';
             const distance = item.distance || '1.5 km away';
             
