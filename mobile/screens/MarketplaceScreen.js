@@ -71,7 +71,7 @@ export default function MarketplaceScreen({ navigation }) {
       }
     }
 
-    const qty = Number(item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity || item.quantity || 0);
+    const qty = Number(item.availableQuantity !== undefined ? item.availableQuantity : (item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity || item.quantity || 0));
     const price = Number(item.approvedUnitPrice > 0 ? item.approvedUnitPrice : item.pendingUnitPrice || item.unitPrice || 0);
 
     if (!isNaN(minQ) && qty < minQ) {
@@ -217,7 +217,7 @@ export default function MarketplaceScreen({ navigation }) {
           </View>
         ) : (
           displayListings.map((item, index) => {
-            const quantity = item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity;
+            const quantity = item.availableQuantity !== undefined ? item.availableQuantity : (item.approvedQuantity > 0 ? item.approvedQuantity : item.pendingQuantity);
             const price = item.approvedUnitPrice > 0 ? item.approvedUnitPrice : item.pendingUnitPrice;
             let sellerName = item.sellerId?.name || 'Community Member';
             if (sellerName === 'Regular User') {

@@ -23,6 +23,14 @@ const energyListingSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    listedQuantity: {
+      type: Number,
+      default: 0,
+    },
+    availableQuantity: {
+      type: Number,
+      default: 0,
+    },
     pendingQuantity: {
       type: Number,
       required: true,
@@ -47,6 +55,16 @@ const energyListingSchema = new mongoose.Schema(
       type: String,
       enum: ['PENDING_APPROVAL', 'ACTIVE', 'PARTIALLY_SOLD', 'SOLD_OUT', 'DECLINED', 'CANCELLED', 'EXPIRED'],
       default: 'PENDING_APPROVAL',
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    previousQuantity: {
+      type: Number,
+    },
+    previousUnitPrice: {
+      type: Number,
     },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,

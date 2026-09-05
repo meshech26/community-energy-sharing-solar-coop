@@ -17,14 +17,12 @@ export default function PaymentScreen({ navigation, route }) {
     try {
       const redirectUrl = Linking.createURL('payment-complete');
       const successUrl = `${redirectUrl}?status=success&total=${total}&quantity=${quantity}&seller=${encodeURIComponent(seller)}&listingId=${listingId || ''}`;
-      const cancelUrl = `${redirectUrl}?status=cancel`;
 
-      // 1. Create Checkout Session
+      // 1. Create Checkout Session (cancel_url is omitted so Stripe does not show the back navigation button)
       const response = await axios.post('http://127.0.0.1:5000/api/payments/create-checkout-session', {
         amount: total, 
         currency: 'lkr',
         success_url: successUrl,
-        cancel_url: cancelUrl
       });
       
       const { url } = response.data;
@@ -34,7 +32,7 @@ export default function PaymentScreen({ navigation, route }) {
 
       // 2. Redirect to Stripe Payment Gateway
       if (Platform.OS === 'web') {
-        window.location.href = url;
+        window.location.replace(url);
       } else {
         await Linking.openURL(url);
         setLoading(false);

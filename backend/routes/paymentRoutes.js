@@ -45,7 +45,7 @@ router.post('/create-checkout-session', async (req, res) => {
       finalAmount = 200; // Enforce a minimum of 200 LKR for the prototype to avoid Stripe API errors
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       payment_method_types: ['card'],
       line_items: [
         {
@@ -61,8 +61,14 @@ router.post('/create-checkout-session', async (req, res) => {
       ],
       mode: 'payment',
       success_url: success_url || 'https://example.com/success',
-      cancel_url: cancel_url || 'https://example.com/cancel',
-    });
+    };
+
+    // Only include cancel_url if explicitly provided; omitting it removes the back navigation button in Stripe Checkout
+    if (cancel_url) {
+      sessionParams.cancel_url = cancel_url;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ url: session.url });
   } catch (error) {

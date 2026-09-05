@@ -16,9 +16,12 @@ exports.createListing = async (req, res) => {
       approvedQuantity: 0,
       approvedUnit: unit || 'kWh',
       approvedUnitPrice: 0,
+      listedQuantity: quantity,
+      availableQuantity: 0,
       availableDate: availableDate ? new Date(availableDate) : new Date(),
       description,
-      status: 'PENDING_APPROVAL'
+      status: 'PENDING_APPROVAL',
+      isEdited: false
     });
 
     res.status(201).json({ success: true, data: listing });
@@ -34,7 +37,10 @@ exports.getActiveListings = async (req, res) => {
   try {
     const query = {
       status: { $in: ['ACTIVE', 'PARTIALLY_SOLD'] },
-      approvedQuantity: { $gt: 0 }
+      $or: [
+        { availableQuantity: { $gt: 0 } },
+        { approvedQuantity: { $gt: 0 } }
+      ]
     };
 
     // Filter out current user's own listings so they only see energy available from other members
@@ -43,8 +49,18 @@ exports.getActiveListings = async (req, res) => {
     }
 
     const listings = await EnergyListing.find(query).populate('sellerId', 'name email');
+    const mapped = listings.map(l => {
+      const obj = l.toObject();
+      if (!obj.listedQuantity || obj.listedQuantity <= 0) {
+        obj.listedQuantity = Math.max(obj.pendingQuantity || 0, obj.approvedQuantity || 0);
+      }
+      if (obj.availableQuantity === undefined) {
+        obj.availableQuantity = obj.approvedQuantity !== undefined ? obj.approvedQuantity : 0;
+      }
+      return obj;
+    });
 
-    res.status(200).json({ success: true, count: listings.length, data: listings });
+    res.status(200).json({ success: true, count: mapped.length, data: mapped });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -56,7 +72,17 @@ exports.getActiveListings = async (req, res) => {
 exports.getMyListings = async (req, res) => {
   try {
     const listings = await EnergyListing.find({ sellerId: req.user.id });
-    res.status(200).json({ success: true, count: listings.length, data: listings });
+    const mapped = listings.map(l => {
+      const obj = l.toObject();
+      if (!obj.listedQuantity || obj.listedQuantity <= 0) {
+        obj.listedQuantity = Math.max(obj.pendingQuantity || 0, obj.approvedQuantity || 0);
+      }
+      if (obj.availableQuantity === undefined) {
+        obj.availableQuantity = obj.approvedQuantity !== undefined ? obj.approvedQuantity : 0;
+      }
+      return obj;
+    });
+    res.status(200).json({ success: true, count: mapped.length, data: mapped });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -69,7 +95,14 @@ exports.getListingById = async (req, res) => {
   try {
     const listing = await EnergyListing.findById(req.params.id).populate('sellerId', 'name email');
     if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
-    res.status(200).json({ success: true, data: listing });
+    const obj = listing.toObject();
+    if (!obj.listedQuantity || obj.listedQuantity <= 0) {
+      obj.listedQuantity = Math.max(obj.pendingQuantity || 0, obj.approvedQuantity || 0);
+    }
+    if (obj.availableQuantity === undefined) {
+      obj.availableQuantity = obj.approvedQuantity !== undefined ? obj.approvedQuantity : 0;
+    }
+    res.status(200).json({ success: true, data: obj });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -83,21 +116,36 @@ exports.updateListing = async (req, res) => {
     let listing = await EnergyListing.findById(req.params.id);
     if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
 
-    // Verify ownership
-    if (listing.sellerId.toString() !== req.user.id.toString()) {
+    // Verify ownership or admin
+    if (listing.sellerId.toString() !== req.user.id.toString() && !req.user.isCoopAdmin) {
       return res.status(403).json({ success: false, error: 'User not authorized to update this listing' });
     }
 
     const { quantity, unit, unitPrice, availableDate, description } = req.body;
 
-    listing.pendingQuantity = quantity !== undefined ? quantity : listing.pendingQuantity;
-    listing.pendingUnit = unit !== undefined ? unit : listing.pendingUnit;
-    listing.pendingUnitPrice = unitPrice !== undefined ? unitPrice : listing.pendingUnitPrice;
+    // Capture previous terms for admin comparison
+    listing.previousQuantity = listing.approvedQuantity > 0 ? listing.approvedQuantity : listing.pendingQuantity;
+    listing.previousUnitPrice = listing.approvedUnitPrice > 0 ? listing.approvedUnitPrice : listing.pendingUnitPrice;
+    listing.isEdited = true;
+
+    if (quantity !== undefined) {
+      const numQty = parseFloat(quantity);
+      listing.pendingQuantity = numQty;
+      listing.listedQuantity = numQty;
+      listing.availableQuantity = 0; // resets until approved
+    }
+    if (unit !== undefined) {
+      listing.pendingUnit = unit;
+    }
+    if (unitPrice !== undefined) {
+      listing.pendingUnitPrice = parseFloat(unitPrice);
+    }
     if (availableDate) listing.availableDate = availableDate;
     if (description !== undefined) listing.description = description;
     
-    // Listing returns to PENDING_APPROVAL after changes
+    // Listing returns to PENDING_APPROVAL after changes and clears decline reason
     listing.status = 'PENDING_APPROVAL';
+    listing.declineReason = undefined;
 
     await listing.save();
 
@@ -107,7 +155,7 @@ exports.updateListing = async (req, res) => {
   }
 };
 
-// @desc    Cancel listing by seller
+// @desc    Delete/Cancel listing by seller
 // @route   DELETE /api/energy/listings/:id
 // @access  Private
 exports.cancelListing = async (req, res) => {
@@ -115,18 +163,18 @@ exports.cancelListing = async (req, res) => {
     const listing = await EnergyListing.findById(req.params.id);
     if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
 
-    if (listing.sellerId.toString() !== req.user.id.toString()) {
-      return res.status(403).json({ success: false, error: 'Not authorized to cancel this listing' });
+    if (listing.sellerId.toString() !== req.user.id.toString() && !req.user.isCoopAdmin) {
+      return res.status(403).json({ success: false, error: 'Not authorized to delete this listing' });
     }
 
     if (['COMPLETED'].includes(listing.status)) { // Example check
-      return res.status(400).json({ success: false, error: 'Cannot cancel a completed listing' });
+      return res.status(400).json({ success: false, error: 'Cannot delete a completed listing' });
     }
 
-    listing.status = 'CANCELLED';
-    await listing.save();
+    // Permanently delete so it is removed from user side AND admin approvals queue
+    await EnergyListing.findByIdAndDelete(req.params.id);
 
-    res.status(200).json({ success: true, data: {} });
+    res.status(200).json({ success: true, message: 'Listing deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -155,7 +203,10 @@ exports.approveListing = async (req, res) => {
     listing.approvedQuantity = listing.pendingQuantity;
     listing.approvedUnit = listing.pendingUnit;
     listing.approvedUnitPrice = listing.pendingUnitPrice;
+    listing.listedQuantity = listing.pendingQuantity;
+    listing.availableQuantity = listing.pendingQuantity;
     listing.status = 'ACTIVE';
+    listing.isEdited = false; // reset edit flag upon approval
     listing.approvedBy = req.user.id;
     listing.approvedAt = Date.now();
     listing.declineReason = undefined; // clear any old reason
@@ -178,15 +229,7 @@ exports.declineListing = async (req, res) => {
 
     listing.status = 'DECLINED';
     listing.declineReason = req.body.reason || 'Not specified';
-    // We don't overwrite approvedQuantity/Price because previous ones might be kept.
-    // Actually, requirement says: "If the Admin declines, the pending changes are discarded and the previous approved version remains active"
-    // So let's restore active status if there was an approved version previously.
-    if (listing.approvedQuantity > 0) {
-      listing.status = 'ACTIVE';
-      // pending goes back to approved
-      listing.pendingQuantity = listing.approvedQuantity;
-      listing.pendingUnitPrice = listing.approvedUnitPrice;
-    }
+    listing.isEdited = false;
 
     await listing.save();
 

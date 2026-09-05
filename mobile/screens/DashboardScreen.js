@@ -109,24 +109,17 @@ export default function DashboardScreen({ navigation }) {
         <Text className="text-gray-600 text-[10px] font-bold tracking-widest mb-3">QUICK LINKS</Text>
         <View className="flex-row justify-between mb-8">
           <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-2 py-2.5 rounded-full flex-row items-center justify-center mr-2"
+            className="flex-1 bg-white border border-gray-300 px-3 py-2.5 rounded-full flex-row items-center justify-center mr-3"
             onPress={() => navigation.navigate('MyListings')}
           >
-            <MaterialCommunityIcons name="format-list-bulleted" size={14} color="#333" className="mr-1.5" />
+            <MaterialCommunityIcons name="format-list-bulleted" size={16} color="#333" className="mr-2" />
             <Text className="text-gray-800 text-xs font-semibold">My Listings</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-2 py-2.5 rounded-full flex-row items-center justify-center mr-2"
-            onPress={() => navigation.navigate('TransactionHistory', { initialTab: 'Purchases' })}
-          >
-            <MaterialCommunityIcons name="text-box-outline" size={14} color="#333" className="mr-1.5" />
-            <Text className="text-gray-800 text-xs font-semibold">My Orders</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-2 py-2.5 rounded-full flex-row items-center justify-center"
+            className="flex-1 bg-white border border-gray-300 px-3 py-2.5 rounded-full flex-row items-center justify-center"
             onPress={() => navigation.navigate('TransactionHistory')}
           >
-            <MaterialCommunityIcons name="history" size={14} color="#333" className="mr-1.5" />
+            <MaterialCommunityIcons name="history" size={16} color="#333" className="mr-2" />
             <Text className="text-gray-800 text-xs font-semibold">Transactions</Text>
           </TouchableOpacity>
         </View>

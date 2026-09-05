@@ -12,7 +12,12 @@ exports.createOrder = async (req, res) => {
     const listing = await EnergyListing.findById(listingId);
     if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
 
-    if (!['ACTIVE', 'PARTIALLY_SOLD', 'PENDING_APPROVAL'].includes(listing.status) || listing.approvedQuantity <= 0) {
+    // Determine current available quantity
+    const currentAvailable = listing.availableQuantity !== undefined && listing.availableQuantity > 0
+      ? listing.availableQuantity
+      : (listing.approvedQuantity > 0 ? listing.approvedQuantity : 0);
+
+    if (!['ACTIVE', 'PARTIALLY_SOLD', 'PENDING_APPROVAL'].includes(listing.status) || currentAvailable <= 0) {
       return res.status(400).json({ success: false, error: 'Listing is not available for purchase' });
     }
 
@@ -20,7 +25,7 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Requested quantity must be greater than zero' });
     }
 
-    if (quantity > listing.approvedQuantity) {
+    if (quantity > currentAvailable) {
       return res.status(400).json({ success: false, error: 'Not enough energy available' });
     }
 
@@ -28,7 +33,9 @@ exports.createOrder = async (req, res) => {
     //   return res.status(400).json({ success: false, error: 'You cannot purchase your own energy listing' });
     // }
 
-    const totalAmount = quantity * listing.approvedUnitPrice;
+    const unitPrice = listing.approvedUnitPrice > 0 ? listing.approvedUnitPrice : (listing.pendingUnitPrice || 0);
+    const unit = listing.approvedUnit || listing.pendingUnit || 'kWh';
+    const totalAmount = quantity * unitPrice;
 
     const order = await EnergyOrder.create({
       listingId: listing._id,
@@ -37,20 +44,26 @@ exports.createOrder = async (req, res) => {
       sellerId: listing.sellerId,
       sellerHouseholdId: listing.householdId,
       purchasedQuantity: quantity,
-      unit: listing.approvedUnit,
-      agreedUnitPrice: listing.approvedUnitPrice,
+      unit: unit,
+      agreedUnitPrice: unitPrice,
       totalAmount,
       status: 'COMPLETED' // Auto-complete for prototype
     });
 
-    // Deduct quantity from listing
-    listing.approvedQuantity -= quantity;
-    listing.pendingQuantity -= quantity;
+    // Ensure listedQuantity is preserved and never changes when buying
+    if (!listing.listedQuantity || listing.listedQuantity <= 0) {
+      listing.listedQuantity = Math.max(listing.pendingQuantity || 0, listing.approvedQuantity || 0, currentAvailable);
+    }
+
+    // Deduct quantity from availableQuantity and approvedQuantity ONLY (listedQuantity never changes)
+    const newAvailable = Math.max(0, currentAvailable - quantity);
+    listing.availableQuantity = newAvailable;
+    listing.approvedQuantity = newAvailable;
     
-    if (listing.approvedQuantity <= 0) {
+    if (newAvailable <= 0) {
       listing.status = 'SOLD_OUT';
     } else {
-      listing.status = 'PARTIALLY_SOLD';
+      listing.status = 'ACTIVE';
     }
     await listing.save();
 
@@ -174,20 +187,29 @@ exports.confirmPayment = async (req, res) => {
     const listing = await EnergyListing.findById(order.listingId);
     if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
 
+    // Determine current available quantity
+    const currentAvailable = listing.availableQuantity !== undefined && listing.availableQuantity > 0
+      ? listing.availableQuantity
+      : (listing.approvedQuantity > 0 ? listing.approvedQuantity : 0);
+
     // Deduct quantity from listing
-    if (listing.approvedQuantity < order.purchasedQuantity) {
+    if (currentAvailable < order.purchasedQuantity) {
       return res.status(400).json({ success: false, error: 'Not enough available energy to complete purchase' });
     }
 
-    listing.approvedQuantity -= order.purchasedQuantity;
-    // We should also deduct from pendingQuantity, otherwise pending shows more than approved.
-    listing.pendingQuantity -= order.purchasedQuantity;
+    if (!listing.listedQuantity || listing.listedQuantity <= 0) {
+      listing.listedQuantity = Math.max(listing.pendingQuantity || 0, listing.approvedQuantity || 0, currentAvailable);
+    }
+
+    const newAvailable = Math.max(0, currentAvailable - order.purchasedQuantity);
+    listing.availableQuantity = newAvailable;
+    listing.approvedQuantity = newAvailable;
 
     if (listing.status !== 'PENDING_APPROVAL') {
-      if (listing.approvedQuantity === 0) {
+      if (newAvailable <= 0) {
         listing.status = 'SOLD_OUT';
       } else {
-        listing.status = 'PARTIALLY_SOLD';
+        listing.status = 'ACTIVE';
       }
     }
 
