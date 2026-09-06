@@ -179,10 +179,10 @@ export default function MarketplaceScreen({ navigation }) {
 
         {viewMode === 'map' ? (
           <View>
-            <View className="rounded-xl overflow-hidden mb-4 border border-gray-200">
+            <View className="w-full aspect-[4/3] sm:aspect-[16/9] lg:aspect-[16/7] rounded-2xl overflow-hidden mb-4 border border-gray-200">
               <MapView
                 ref={mapRef}
-                style={{ height: 350, width: '100%' }}
+                style={{ width: '100%', height: '100%' }}
                 initialRegion={userLocation ? { 
                   latitude: userLocation.latitude, 
                   longitude: userLocation.longitude, 

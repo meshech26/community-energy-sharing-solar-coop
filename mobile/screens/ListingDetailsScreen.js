@@ -165,8 +165,9 @@ export default function ListingDetailsScreen({ navigation, route }) {
                 Location shown is approximate for privacy
               </Text>
             </View>
-            <MapView
-              style={{ height: 160, width: '100%' }}
+            <View className="w-full aspect-[16/9] sm:aspect-[16/7] overflow-hidden">
+              <MapView
+                style={{ width: '100%', height: '100%' }}
               initialRegion={{
                 latitude: addPrivacyOffset(listing.location.latitude, listing.location.longitude).latitude,
                 longitude: addPrivacyOffset(listing.location.latitude, listing.location.longitude).longitude,
@@ -182,7 +183,8 @@ export default function ListingDetailsScreen({ navigation, route }) {
                 coordinate={addPrivacyOffset(listing.location.latitude, listing.location.longitude)}
                 pinColor="#0f6b4b"
               />
-            </MapView>
+              </MapView>
+            </View>
           </View>
         )}
 

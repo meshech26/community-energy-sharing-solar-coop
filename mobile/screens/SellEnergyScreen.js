@@ -324,9 +324,9 @@ export default function SellEnergyScreen({ navigation }) {
             <Text className="text-lg font-bold text-gray-800 mb-1" style={{ fontFamily: 'serif' }}>📍 Location</Text>
             <Text className="text-xs text-gray-500 mb-4">Pin your energy source on the map</Text>
             
-            <View className="rounded-2xl overflow-hidden border border-gray-300 mb-3">
+            <View className="w-full aspect-[16/9] rounded-2xl overflow-hidden border border-gray-300 mb-3">
               <MapView
-                style={{ height: 150, width: '100%' }}
+                style={{ width: '100%', height: '100%' }}
                 region={location ? {
                   latitude: location.latitude,
                   longitude: location.longitude,
