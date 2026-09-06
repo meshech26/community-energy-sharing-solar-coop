@@ -3,6 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityInd
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import MapView, { Marker } from '../MapWrapper';
+import { getCurrentLocation, DEFAULT_REGION } from '../utils/locationUtils';
 
 const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -55,6 +57,8 @@ export default function SellEnergyScreen({ navigation }) {
   const [endTime, setEndTime] = useState('05:00 PM');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   // Calendar Modal State
   const [calendarModalVisible, setCalendarModalVisible] = useState(false);
@@ -70,6 +74,17 @@ export default function SellEnergyScreen({ navigation }) {
   const [tempEndTime, setTempEndTime] = useState('05:00 PM');
 
   const todayObj = new Date();
+
+  const handleGetLocation = async () => {
+    setLocationLoading(true);
+    const result = await getCurrentLocation();
+    if (!result) {
+      Alert.alert('Permission Denied', 'Please enable location access in your device settings.');
+    } else {
+      setLocation(result);
+    }
+    setLocationLoading(false);
+  };
 
   const handlePrevMonth = () => {
     if (viewMonth === 0) {
@@ -147,7 +162,8 @@ export default function SellEnergyScreen({ navigation }) {
         quantity: parsedQty,
         unitPrice: parsedPrice,
         availableDate: parsedDate.toISOString(),
-        description: description
+        description: description,
+        location: location ? { latitude: location.latitude, longitude: location.longitude } : undefined
       });
       navigation.navigate('SellSuccess');
     } catch (e) {
@@ -301,6 +317,51 @@ export default function SellEnergyScreen({ navigation }) {
                 <MaterialCommunityIcons name="resize-bottom-right" size={10} color="#ccc" />
               </View>
             </View>
+          </View>
+
+          {/* Location Section */}
+          <View className="mb-8">
+            <Text className="text-lg font-bold text-gray-800 mb-1" style={{ fontFamily: 'serif' }}>📍 Location</Text>
+            <Text className="text-xs text-gray-500 mb-4">Pin your energy source on the map</Text>
+            
+            <View className="rounded-2xl overflow-hidden border border-gray-300 mb-3">
+              <MapView
+                style={{ height: 150, width: '100%' }}
+                region={location ? {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                } : DEFAULT_REGION}
+                scrollEnabled={false}
+                zoomEnabled={false}
+              >
+                {location && (
+                  <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} />
+                )}
+              </MapView>
+            </View>
+
+            <TouchableOpacity 
+              className="bg-[#0f6b4b] rounded-xl py-3 flex-row justify-center items-center shadow-sm"
+              onPress={handleGetLocation}
+              disabled={locationLoading}
+            >
+              {locationLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="crosshairs-gps" size={18} color="#fff" className="mr-2" />
+                  <Text className="text-white font-bold text-sm">Use My Current Location</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            {location && (
+              <Text className="text-center text-[10px] text-gray-500 mt-2">
+                Coordinates: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+              </Text>
+            )}
           </View>
 
           <View className="bg-[#e2ebe6] rounded-xl p-5 mb-6 border border-[#c6d8ce]">

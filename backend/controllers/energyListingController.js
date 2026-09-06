@@ -5,7 +5,7 @@ const EnergyListing = require('../models/EnergyListing');
 // @access  Private
 exports.createListing = async (req, res) => {
   try {
-    const { quantity, unit, unitPrice, availableDate, description } = req.body;
+    const { quantity, unit, unitPrice, availableDate, description, location } = req.body;
 
     const listing = await EnergyListing.create({
       sellerId: req.user.id,
@@ -20,6 +20,9 @@ exports.createListing = async (req, res) => {
       availableQuantity: 0,
       availableDate: availableDate ? new Date(availableDate) : new Date(),
       description,
+      location: location && location.latitude && location.longitude
+        ? { latitude: location.latitude, longitude: location.longitude }
+        : undefined,
       status: 'PENDING_APPROVAL',
       isEdited: false
     });
@@ -121,7 +124,7 @@ exports.updateListing = async (req, res) => {
       return res.status(403).json({ success: false, error: 'User not authorized to update this listing' });
     }
 
-    const { quantity, unit, unitPrice, availableDate, description } = req.body;
+    const { quantity, unit, unitPrice, availableDate, description, location } = req.body;
 
     // Capture previous terms for admin comparison
     listing.previousQuantity = listing.approvedQuantity > 0 ? listing.approvedQuantity : listing.pendingQuantity;
@@ -142,7 +145,9 @@ exports.updateListing = async (req, res) => {
     }
     if (availableDate) listing.availableDate = availableDate;
     if (description !== undefined) listing.description = description;
-    
+    if (location && location.latitude && location.longitude) {
+      listing.location = { latitude: location.latitude, longitude: location.longitude };
+    }
     // Listing returns to PENDING_APPROVAL after changes and clears decline reason
     listing.status = 'PENDING_APPROVAL';
     listing.declineReason = undefined;

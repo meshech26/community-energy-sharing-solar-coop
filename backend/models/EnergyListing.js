@@ -73,6 +73,14 @@ const energyListingSchema = new mongoose.Schema(
     approvedAt: {
       type: Date,
     },
+    location: {
+      latitude: {
+        type: Number,
+      },
+      longitude: {
+        type: Number,
+      },
+    },
     declineReason: {
       type: String,
     }

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker } from '../MapWrapper';
+import { getCurrentLocation, calculateDistance, addPrivacyOffset, formatDistance, DEFAULT_REGION } from '../utils/locationUtils';
 
 export default function ListingDetailsScreen({ navigation, route }) {
   const { listing } = route.params || {};
@@ -16,6 +18,14 @@ export default function ListingDetailsScreen({ navigation, route }) {
   
   const initialQty = maxQuantity > 0 ? Math.min(6, maxQuantity) : 1;
   const [purchaseQuantity, setPurchaseQuantity] = useState(String(initialQty));
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const loc = await getCurrentLocation();
+      if (loc) setUserLocation(loc);
+    })();
+  }, []);
   
   const handleIncrease = () => {
     const current = parseFloat(purchaseQuantity) || 0;
@@ -79,6 +89,15 @@ export default function ListingDetailsScreen({ navigation, route }) {
     ? Math.min(100, Math.max(0, (numericQuantity / maxQuantity) * 100))
     : 0;
 
+  const getDisplayDistance = () => {
+    if (!userLocation || !listing?.location?.latitude) return '1.5 km away';
+    const dist = calculateDistance(
+      userLocation.latitude, userLocation.longitude,
+      listing.location.latitude, listing.location.longitude
+    );
+    return formatDistance(dist) || '1.5 km away';
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#f9f9f9]">
       {/* Header */}
@@ -101,7 +120,7 @@ export default function ListingDetailsScreen({ navigation, route }) {
               <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>{sellerName}</Text>
               <View className="flex-row items-center mt-1">
                 <MaterialCommunityIcons name="map-marker-outline" size={12} color="#666" />
-                <Text className="text-xs text-gray-600 ml-1">1.2 km away</Text>
+                <Text className="text-xs text-gray-600 ml-1">{getDisplayDistance()}</Text>
               </View>
             </View>
           </View>
@@ -120,6 +139,52 @@ export default function ListingDetailsScreen({ navigation, route }) {
             "We have excess solar energy generated during the day while we are at work. Happy to share it with the community!"
           </Text>
         </View>
+
+        {/* Location Map */}
+        {listing?.location?.latitude && listing?.location?.longitude && (
+          <View style={{
+            backgroundColor: '#ffffff',
+            marginHorizontal: 16,
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 12,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}>
+            <View style={{ padding: 16, paddingBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialCommunityIcons name="map-marker-radius" size={18} color="#0f6b4b" />
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#1a1a2e', marginLeft: 8, fontFamily: 'serif' }}>
+                  Approximate Location
+                </Text>
+              </View>
+              <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                Location shown is approximate for privacy
+              </Text>
+            </View>
+            <MapView
+              style={{ height: 160, width: '100%' }}
+              initialRegion={{
+                latitude: addPrivacyOffset(listing.location.latitude, listing.location.longitude).latitude,
+                longitude: addPrivacyOffset(listing.location.latitude, listing.location.longitude).longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              pitchEnabled={false}
+              rotateEnabled={false}
+            >
+              <Marker
+                coordinate={addPrivacyOffset(listing.location.latitude, listing.location.longitude)}
+                pinColor="#0f6b4b"
+              />
+            </MapView>
+          </View>
+        )}
 
         {/* Energy Details Card */}
         <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
