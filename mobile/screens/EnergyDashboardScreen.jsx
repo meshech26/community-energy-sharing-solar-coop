@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import SolarGenerationCard from '../components/SolarGenerationCard';
 import ConsumptionCard from '../components/ConsumptionCard';
 import EnergyBalanceCard from '../components/EnergyBalanceCard';
+import EnvironmentalImpactCard from '../components/EnvironmentalImpactCard';
 import MonthlyUsageCard from '../components/MonthlyUsageCard';
 import EnergyChart from '../components/EnergyChart';
 import LoadingComponent from '../components/LoadingComponent';
@@ -117,6 +118,7 @@ export default function EnergyDashboardScreen({ navigation }) {
         <SolarGenerationCard solar={dashboard?.solar} />
         <ConsumptionCard consumption={dashboard?.consumption} />
         <EnergyBalanceCard balance={dashboard?.balance} />
+        <EnvironmentalImpactCard solar={dashboard?.solar} />
         <MonthlyUsageCard limitData={dashboard?.limit} />
 
         {/* Historical bar trends */}
