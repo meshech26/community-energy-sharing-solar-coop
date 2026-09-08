@@ -7,6 +7,7 @@ import SolarGenerationCard from '../components/SolarGenerationCard';
 import ConsumptionCard from '../components/ConsumptionCard';
 import EnergyBalanceCard from '../components/EnergyBalanceCard';
 import EnvironmentalImpactCard from '../components/EnvironmentalImpactCard';
+import FinancialSavingsCard from '../components/FinancialSavingsCard';
 import MonthlyUsageCard from '../components/MonthlyUsageCard';
 import EnergyChart from '../components/EnergyChart';
 import LoadingComponent from '../components/LoadingComponent';
@@ -119,6 +120,7 @@ export default function EnergyDashboardScreen({ navigation }) {
         <ConsumptionCard consumption={dashboard?.consumption} />
         <EnergyBalanceCard balance={dashboard?.balance} />
         <EnvironmentalImpactCard solar={dashboard?.solar} />
+        <FinancialSavingsCard solar={dashboard?.solar} consumption={dashboard?.consumption} />
         <MonthlyUsageCard limitData={dashboard?.limit} />
 
         {/* Historical bar trends */}
