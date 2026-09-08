@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Resilient layout rules to prevent horizontal overflow in mobile web browsers */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root, [data-reactroot] {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  background-color: #f4f6f5;
+  -webkit-text-size-adjust: 100%;
+}

@@ -36,7 +36,7 @@ const alertSchema = new mongoose.Schema(
       type: Number, // Stores the actual reading value that triggered the alert (e.g. 240.5 kWh)
       required: true,
     },
-    read: {
+    isRead: {
       type: Boolean,
       default: false,
       index: true, // Indexed to quickly filter unread alerts or fetch unread count
