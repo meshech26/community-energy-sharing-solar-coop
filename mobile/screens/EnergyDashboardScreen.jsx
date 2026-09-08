@@ -120,7 +120,11 @@ export default function EnergyDashboardScreen({ navigation }) {
         <ConsumptionCard consumption={dashboard?.consumption} />
         <EnergyBalanceCard balance={dashboard?.balance} />
         <EnvironmentalImpactCard solar={dashboard?.solar} />
-        <FinancialSavingsCard solar={dashboard?.solar} consumption={dashboard?.consumption} />
+        <FinancialSavingsCard 
+          solar={dashboard?.solar} 
+          consumption={dashboard?.consumption} 
+          navigation={navigation}
+        />
         <MonthlyUsageCard limitData={dashboard?.limit} />
 
         {/* Historical bar trends */}
@@ -133,7 +137,7 @@ export default function EnergyDashboardScreen({ navigation }) {
             className="flex-1 py-4 bg-white rounded-2xl border border-slate-200 shadow-sm items-center active:bg-slate-50"
           >
             <Text className="text-sm font-bold text-slate-600">
-              ⚙️ Configure Limit
+              ⚙️ Settings & Limits
             </Text>
           </TouchableOpacity>
 

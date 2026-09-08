@@ -1,29 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useEnergyStore } from '../store/energyStore';
 
 /**
  * Financial Savings & Tariff Calculator Card
  * Formatted in Sri Lankan Rupees (LKR).
- * Allows manual recording and comparison of physical utility bills.
- * 
- * Standard Sri Lankan Domestic Electricity Tariffs (CEB/LECO Reference):
- * - Grid Electricity Tariff: LKR 42.00 per kWh
- * - Solar Co-op Feed-in Tariff: LKR 35.00 per kWh
+ * Reads custom user tariff rates and recorded physical utility bill from the Settings store.
  */
-export default function FinancialSavingsCard({ solar, consumption }) {
+export default function FinancialSavingsCard({ solar, consumption, navigation }) {
   const monthlySolar = solar?.monthly || 0;
   const monthlyCons = consumption?.monthly || 0;
 
-  const GRID_RATE = 42.0; // LKR 42.00 / kWh
-  const COOP_FEED_IN_RATE = 35.0; // LKR 35.00 / kWh
+  const { tariffSettings } = useEnergyStore();
+  const GRID_RATE = tariffSettings?.gridRate || 42.0; // LKR per kWh
+  const COOP_FEED_IN_RATE = tariffSettings?.feedInRate || 35.0; // LKR per kWh
+  const actualBill = tariffSettings?.actualBill ?? null;
 
-  // Manual Actual Bill State
-  const [actualBill, setActualBill] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [inputVal, setInputVal] = useState('');
-  const [inputError, setInputError] = useState('');
-
-  // Calculations
+  // Calculations based on dynamic user tariff
   const grossCost = monthlyCons * GRID_RATE;
   const solarSavings = monthlySolar * GRID_RATE;
   const netBill = Math.max(0, grossCost - solarSavings);
@@ -41,24 +34,7 @@ export default function FinancialSavingsCard({ solar, consumption }) {
     return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const handleSaveActualBill = () => {
-    setInputError('');
-    const parsed = parseFloat(inputVal);
-    if (isNaN(parsed) || parsed < 0) {
-      setInputError('Please enter a valid bill amount in LKR.');
-      return;
-    }
-    setActualBill(parsed);
-    setIsEditing(false);
-  };
-
-  const handleClearActualBill = () => {
-    setActualBill(null);
-    setInputVal('');
-    setIsEditing(false);
-  };
-
-  // Compare actual bill vs calculated estimate
+  // Compare actual physical bill vs calculated net estimate
   const billDiff = actualBill !== null ? actualBill - netBill : 0;
   const accuracyPct = actualBill !== null && actualBill > 0
     ? Math.max(0, Math.min(100, Math.round((1 - Math.abs(billDiff) / actualBill) * 100)))
@@ -82,12 +58,15 @@ export default function FinancialSavingsCard({ solar, consumption }) {
           </View>
         </View>
 
-        {/* Tariff Rate Badge */}
-        <View className="bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+        {/* Dynamic Tariff Rate Badge */}
+        <TouchableOpacity 
+          onPress={() => navigation?.navigate('EnergyLimit')}
+          className="bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 active:bg-slate-100"
+        >
           <Text className="text-[10px] font-extrabold text-slate-600">
-            LKR 42 / kWh
+            LKR {GRID_RATE.toFixed(1)} / kWh ⚙️
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Primary Financial Grid */}
@@ -142,84 +121,41 @@ export default function FinancialSavingsCard({ solar, consumption }) {
         </View>
       </View>
 
-      {/* Manual Actual Bill Comparison Section */}
+      {/* Physical Utility Bill Verification Section */}
       <View className="mt-4 pt-4 border-t border-slate-100">
         <View className="flex-row justify-between items-center mb-2">
           <View>
             <Text className="text-xs font-bold text-[#1d2a23]">
-              Actual Power Utility Bill (CEB / LECO)
+              Actual Physical Bill (CEB / LECO)
             </Text>
             <Text className="text-[10px] text-slate-400">
-              Record physical utility bill to verify co-op metering accuracy
+              Verify metering accuracy with your physical statement
             </Text>
           </View>
-          {actualBill !== null && !isEditing && (
+          {navigation && (
             <TouchableOpacity 
-              onPress={() => {
-                setInputVal(actualBill.toString());
-                setIsEditing(true);
-              }}
+              onPress={() => navigation.navigate('EnergyLimit')}
               className="px-2.5 py-1 bg-slate-100 rounded-lg active:bg-slate-200"
             >
-              <Text className="text-[10px] font-bold text-slate-600">Edit</Text>
+              <Text className="text-[10px] font-bold text-slate-600">Settings ⚙️</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* When bill is NOT entered and not editing */}
-        {actualBill === null && !isEditing && (
+        {/* When bill is NOT entered -> Prompts to add in Settings */}
+        {actualBill === null && (
           <TouchableOpacity
-            onPress={() => setIsEditing(true)}
+            onPress={() => navigation?.navigate('EnergyLimit')}
             className="py-3 px-4 bg-white border border-dashed border-[#3b6e52]/50 rounded-2xl items-center active:bg-[#eef4f0]"
           >
             <Text className="text-xs font-bold text-[#3b6e52]">
-              + Enter Actual Physical Bill (LKR)
+              + Record Actual Bill & Adjust Rates in Settings
             </Text>
           </TouchableOpacity>
         )}
 
-        {/* When entering / editing actual bill */}
-        {isEditing && (
-          <View className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <Text className="text-xs font-semibold text-slate-500 mb-1.5">
-              Enter Net Amount from Physical Bill (LKR):
-            </Text>
-            <View className="flex-row gap-2 items-center">
-              <TextInput
-                value={inputVal}
-                onChangeText={(val) => {
-                  setInputVal(val);
-                  setInputError('');
-                }}
-                placeholder="e.g. 4500.00"
-                placeholderTextColor="#94a3b8"
-                keyboardType="numeric"
-                className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#1d2a23]"
-                style={{ fontSize: 16 }}
-              />
-              <TouchableOpacity
-                onPress={handleSaveActualBill}
-                className="px-4 py-2.5 bg-[#3b6e52] rounded-xl active:bg-[#345e46]"
-              >
-                <Text className="text-xs font-bold text-white">Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setIsEditing(false)}
-                className="px-3 py-2.5 bg-slate-200 rounded-xl active:bg-slate-300"
-              >
-                <Text className="text-xs font-bold text-slate-600">Cancel</Text>
-              </TouchableOpacity>
-            </View>
-            {inputError ? (
-              <Text className="text-[11px] font-bold text-rose-500 mt-1.5">
-                {inputError}
-              </Text>
-            ) : null}
-          </View>
-        )}
-
         {/* When actual bill IS entered -> Comparison Summary */}
-        {actualBill !== null && !isEditing && (
+        {actualBill !== null && (
           <View className="bg-[#eef4f0] border border-[#dcece1] rounded-2xl p-4 mt-2">
             <View className="flex-row justify-between items-center mb-1.5">
               <Text className="text-xs text-slate-600">Actual Utility Bill:</Text>

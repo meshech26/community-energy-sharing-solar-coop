@@ -11,6 +11,22 @@ export const useEnergyStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  // Custom electricity tariffs & recorded physical bill
+  tariffSettings: {
+    gridRate: 42.0,      // Default LKR 42.00 / kWh
+    feedInRate: 35.0,    // Default LKR 35.00 / kWh
+    actualBill: null,    // Recorded physical utility bill in LKR
+  },
+
+  updateTariffSettings: (newSettings) => {
+    set((state) => ({
+      tariffSettings: {
+        ...state.tariffSettings,
+        ...newSettings
+      }
+    }));
+  },
+
   // Fetch energy metrics for dashboard view
   fetchDashboard: async () => {
     set({ loading: true, error: null });
