@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import Card from '../../components/Card';
+import { Card } from '../../components/community/CommunityUI';
 import ErrorMessage from '../../components/ErrorMessage';
 import FormInput from '../../components/FormInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
-import SectionHeader from '../../components/SectionHeader';
+import { SectionHeader, screenSpacing } from '../../components/community/CommunityUI';
 import { cancelProposal } from '../../services/proposalService';
 import { getCommunityError } from '../../utils/community';
 
@@ -32,7 +32,7 @@ export default function CancelProposalScreen({ navigation, route }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <SectionHeader description={proposalTitle} eyebrow="Co-op Admin" title="Cancel proposal" />
+        <SectionHeader description={proposalTitle} title="Cancel proposal" />
         <Card>
           <FormInput label="Cancellation reason" multiline numberOfLines={4} onChangeText={setReason} placeholder="Explain why this proposal is being cancelled" value={reason} />
           {error ? <ErrorMessage>{error}</ErrorMessage> : null}
@@ -46,4 +46,4 @@ export default function CancelProposalScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({ content: { paddingBottom: 32, paddingHorizontal: 24, paddingTop: 30 }, actions: { gap: 12 } });
+const styles = StyleSheet.create({ content: { ...screenSpacing }, actions: { gap: 12 } });

@@ -54,7 +54,7 @@ const submitVote = async (req, res) => {
       return res.status(400).json({ message: 'choice must be one of: yes, no, abstain.' });
     }
 
-    if (!req.user.household) {
+    if (!req.user.household || !await Household.exists({ _id: req.user.household })) {
       return res.status(409).json({ message: 'Your account is not linked to a household.' });
     }
 
@@ -104,7 +104,7 @@ const submitVote = async (req, res) => {
 
 const getVoteStatus = async (req, res) => {
   try {
-    if (!req.user.household) {
+    if (!req.user.household || !await Household.exists({ _id: req.user.household })) {
       return res.status(409).json({ message: 'Your account is not linked to a household.' });
     }
 

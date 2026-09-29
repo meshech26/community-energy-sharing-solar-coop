@@ -45,6 +45,26 @@ const navigation = { goBack: jest.fn(), navigate: jest.fn(), popToTop: jest.fn()
 const renderWithNavigation = async (component) => render(<NavigationContainer>{component}</NavigationContainer>);
 
 describe('Community frontend', () => {
+  test('home header bell and admin actions retain their routes and tabs retain selected state', async () => {
+    useAuthStore.getState().login({ id: 'admin-id', isCoopAdmin: true }, 'token');
+    listPublishedProposals.mockResolvedValue(proposals);
+    const view = await renderWithNavigation(<CommunityHomeScreen navigation={navigation} />);
+    await view.findByText('Battery storage');
+    const title = view.getByText('Community');
+    expect(title.parent).toHaveStyle({ flexDirection: 'row' });
+    await fireEvent.press(view.getByLabelText('Notifications, 0 unread'));
+    expect(navigation.navigate).toHaveBeenCalledWith('Notifications');
+    await fireEvent.press(view.getByText('Create Proposal'));
+    expect(navigation.navigate).toHaveBeenCalledWith('CreateProposal');
+    await fireEvent.press(view.getByText('Co-op Management'));
+    expect(navigation.navigate).toHaveBeenCalledWith('ManageProposals');
+    expect(view.getByLabelText('Show active proposals').props.accessibilityState.selected).toBe(true);
+    await fireEvent.press(view.getByText('Upcoming 1'));
+    expect(view.getByLabelText('Show upcoming proposals').props.accessibilityState.selected).toBe(true);
+    expect(view.getByLabelText('Show active proposals').props.accessibilityState.selected).toBe(false);
+    expect(view.getByLabelText('Show active proposals')).toHaveStyle({ borderRadius: 4, borderBottomWidth: 2 });
+    expect(view.getByLabelText('Show upcoming proposals')).toHaveStyle({ minHeight: 44, borderBottomWidth: 3 });
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.getState().logout();
@@ -101,7 +121,7 @@ describe('Community frontend', () => {
     useAuthStore.getState().login({ id: 'admin-id', name: 'Admin', isCoopAdmin: true }, 'token');
     const adminView = await renderWithNavigation(<CommunityHomeScreen navigation={navigation} />);
     expect(await adminView.findByText('Create Proposal')).toBeTruthy();
-    expect(adminView.getByText('Manage Proposals')).toBeTruthy();
+    expect(adminView.getByText('Co-op Management')).toBeTruthy();
   });
 
   test('shows a loading state while proposal data is being retrieved', async () => {
@@ -150,6 +170,48 @@ describe('Community frontend', () => {
     expect(await view.findByText('Detailed proposal description.')).toBeTruthy();
     expect(view.getByText('Your household has already submitted a vote for this proposal.')).toBeTruthy();
     expect(view.queryByText('Cast household vote')).toBeNull();
+    expect(view.getByText('Household vote submitted')).toBeTruthy();
+    expect(view.queryByText('Vote now')).toBeNull();
+  });
+  test('active list shows household-only pending and submitted indicators', async () => {
+    listPublishedProposals.mockResolvedValue([{ ...proposals[0], householdHasVoted: false }, { ...proposals[0], id: 'second', title: 'Second proposal', householdHasVoted: true }]);
+    const view = await renderWithNavigation(<CommunityHomeScreen navigation={navigation} />);
+    expect(await view.findByText('Vote pending')).toBeTruthy();
+    expect(view.getByText('Household vote submitted')).toHaveStyle({ color: '#245B87' });
+    expect(view.getByText('Household vote submitted').parent).toHaveStyle({ backgroundColor: '#E8F1FA' });
+    expect(view.getByText('Vote pending')).toHaveStyle({ color: '#8A5A00' });
+    expect(view.getByText('Vote pending').parent).toHaveStyle({ backgroundColor: '#FFF4DE' });
+  });
+  test('failed household status check never enables voting', async () => {
+    getProposal.mockResolvedValue(detailProposal);
+    getVoteStatus.mockRejectedValue(new Error('offline'));
+    const view = await renderWithNavigation(<ProposalDetailsScreen navigation={navigation} route={{ params: { proposalId: 'active-id' } }} />);
+    await view.findByText('Detailed proposal description.');
+    expect(view.queryByText('Vote now')).toBeNull();
+    expect(view.queryByText('Vote pending')).toBeNull();
+  });
+  test.each([true, false])('household details uses the requested palette when submitted=%s', async (hasVoted) => {
+    getProposal.mockResolvedValue(detailProposal);
+    getVoteStatus.mockResolvedValue({ hasVoted });
+    const view = await renderWithNavigation(<ProposalDetailsScreen navigation={navigation} route={{ params: { proposalId: 'active-id' } }} />);
+    const label = await view.findByText(hasVoted ? 'Household vote submitted' : 'Vote pending');
+    expect(label).toHaveStyle({ color: hasVoted ? '#245B87' : '#8A5A00' });
+    expect(view.getByText('Household voting status').parent).toHaveStyle({ backgroundColor: hasVoted ? '#E8F1FA' : '#FFF4DE', borderColor: hasVoted ? '#3E78A8' : '#9A690F' });
+    expect(view.getByText('Active').parent).toHaveStyle({ backgroundColor: '#E2F3E9' });
+    expect(Boolean(view.queryByText('Vote now'))).toBe(!hasVoted);
+  });
+  test('cancelled details keeps its red notice', async () => {
+    getProposal.mockResolvedValue({ ...detailProposal, status: 'cancelled', cancellationReason: 'Changed plans' });
+    const view = await renderWithNavigation(<ProposalDetailsScreen navigation={navigation} route={{ params: { proposalId: 'active-id' } }} />);
+    expect(await view.findByText('Changed plans')).toHaveStyle({ color: '#B14B56' });
+    expect(view.getByText('Changed plans').parent).toHaveStyle({ backgroundColor: '#FCECED' });
+  });
+  test.each(['upcoming', 'closed'])('%s details never offers pending voting', async (status) => {
+    getProposal.mockResolvedValue({ ...detailProposal, status });
+    const view = await renderWithNavigation(<ProposalDetailsScreen navigation={navigation} route={{ params: { proposalId: 'active-id' } }} />);
+    await view.findByText('Detailed proposal description.');
+    expect(view.queryByText('Vote now')).toBeNull();
+    expect(view.queryByText('Vote pending')).toBeNull();
   });
 
   test('opens publish confirmation before publishing a draft from proposal details', async () => {
@@ -199,10 +261,13 @@ describe('Community frontend', () => {
   test('does not show Delete Draft for published proposals', async () => {
     useAuthStore.getState().login({ id: 'admin-id', name: 'Admin', isCoopAdmin: true }, 'token');
     listMyProposals.mockResolvedValue([proposals[0], proposals[1], proposals[2]]);
+    getResults.mockResolvedValue({ finalDecision: 'Approved' });
     const view = await renderWithNavigation(<ManageProposalsScreen navigation={navigation} />);
-
+    await fireEvent.press(view.getByLabelText('Show published proposals'));
     expect(await view.findByText('Battery storage')).toBeTruthy();
     expect(view.getByText('Roof upgrade')).toBeTruthy();
+    expect(view.queryByText('Delete Draft')).toBeNull();
+    await fireEvent.press(view.getByLabelText('Show history proposals'));
     expect(view.getByText('Meter replacement')).toBeTruthy();
     expect(view.queryByText('Delete Draft')).toBeNull();
   });
@@ -216,6 +281,11 @@ describe('Community frontend', () => {
     fireEvent.changeText(view.getByLabelText('Search proposals'), 'draft');
     expect(view.getByText('Draft battery proposal')).toBeTruthy();
     await waitFor(() => expect(view.queryByText('Battery storage')).toBeNull());
+    await fireEvent.press(view.getByLabelText('Show published proposals'));
+    expect(await view.findByText('No proposals match your search.')).toBeTruthy();
+    await fireEvent.changeText(view.getByLabelText('Search proposals'), 'battery');
+    expect(await view.findByText('Battery storage')).toBeTruthy();
+    expect(view.queryByText('Draft battery proposal')).toBeNull();
   });
 
   test('opens the voting deadline calendar and displays a friendly stored date', async () => {
@@ -317,7 +387,7 @@ describe('Community frontend', () => {
     getProposal.mockResolvedValue(detailProposal);
     getVoteStatus.mockResolvedValue({ hasVoted: false });
     const activeView = await renderWithNavigation(<ProposalDetailsScreen navigation={navigation} route={{ params: { proposalId: 'active-id' } }} />);
-    await activeView.findByText('Vote on this proposal');
+    await activeView.findByText('Vote now');
     expect(activeView.queryByText('Voting results')).toBeNull();
     await activeView.unmount();
 

@@ -3,6 +3,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 const Household = require('../models/Household');
+const { ensureSeedHousehold } = require('../services/householdService');
 
 const households = [
   { name: 'Household 01', invitationCode: 'H01-SOLAR' },
@@ -21,13 +22,10 @@ const seedHouseholds = async () => {
   }
 
   await mongoose.connect(process.env.MONGO_URI);
+  await Household.init();
 
   for (const household of households) {
-    await Household.updateOne(
-      { invitationCode: household.invitationCode },
-      { $setOnInsert: household },
-      { upsert: true }
-    );
+    await ensureSeedHousehold(household);
   }
 
   console.log(`Ensured ${households.length} development households exist.`);
@@ -35,7 +33,7 @@ const seedHouseholds = async () => {
 
 seedHouseholds()
   .catch((error) => {
-    console.error('Household seed failed:', error.message);
+    console.error('Household seed failed. Check database availability and household uniqueness.');
     process.exitCode = 1;
   })
   .finally(async () => {

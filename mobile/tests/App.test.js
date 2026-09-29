@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render } from '@testing-library/react-native';
 import App from '../App';
+import * as ReactNative from 'react-native';
 import { listPublishedProposals } from '../services/proposalService';
 import { useAuthStore } from '../store/authStore';
 
@@ -9,6 +10,7 @@ jest.mock('../services/proposalService', () => ({
 
 describe('App', () => {
   afterEach(async () => {
+    jest.restoreAllMocks();
     await cleanup();
     useAuthStore.getState().logout();
   });
@@ -82,6 +84,19 @@ describe('App', () => {
     fireEvent.press(getByLabelText('Log out'));
 
     expect(await findByText('Welcome back')).toBeTruthy();
+  });
+
+  test('narrow large-text tabs keep complete labels without disabling font scaling', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 320, height: 568, scale: 1, fontScale: 2 });
+    useAuthStore.getState().login({ name: 'Member', household: 'household-id', isCoopAdmin: false }, 'test-token');
+    const view = await render(<App />);
+    for (const name of ['Energy Sharing', 'Community', 'My Impact']) {
+      const label = view.getByText(name);
+      expect(label.props.numberOfLines).toBeUndefined();
+      expect(label.props.allowFontScaling).not.toBe(false);
+      expect(label).toHaveStyle({ textAlign: 'center', maxWidth: '100%' });
+      expect(view.getByLabelText(`Open ${name}`)).toBeTruthy();
+    }
   });
 
   test('navigation renders the registration route', async () => {

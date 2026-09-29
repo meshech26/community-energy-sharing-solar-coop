@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function ErrorMessage({ children }) {
   return (
-    <View accessibilityRole="alert" style={styles.container}>
-      <MaterialCommunityIcons color="#A42A2A" name="alert-circle-outline" size={20} />
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.container}>
+      <MaterialCommunityIcons accessible={false} color="#A42A2A" name="alert-circle-outline" size={20} />
       <Text style={styles.text}>{children}</Text>
     </View>
   );

@@ -2,12 +2,12 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import Card from '../../components/Card';
+import { Card } from '../../components/community/CommunityUI';
 import ErrorMessage from '../../components/ErrorMessage';
 import LoadingState from '../../components/LoadingState';
 import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
-import SectionHeader from '../../components/SectionHeader';
+import { SectionHeader, screenSpacing } from '../../components/community/CommunityUI';
 import ProposalForm from '../../components/community/ProposalForm';
 import { getProposal, updateDraft } from '../../services/proposalService';
 import { getCommunityError } from '../../utils/community';
@@ -47,11 +47,11 @@ export default function EditProposalScreen({ navigation, route }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <SectionHeader description="Only draft proposals can be edited." eyebrow="Co-op Admin" title="Edit draft" />
+        <SectionHeader title="Edit draft" />
         <Card>{error ? <ErrorMessage>{error}</ErrorMessage> : null}<ProposalForm initialValues={initialValues} isSubmitting={isSubmitting} onSubmit={save} submitLabel="Save changes" /></Card>
       </ScrollView>
     </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({ content: { paddingBottom: 32, paddingHorizontal: 24, paddingTop: 30 }, errorPage: { padding: 24 } });
+const styles = StyleSheet.create({ content: { ...screenSpacing }, errorPage: { padding: 24 } });

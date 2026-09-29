@@ -29,7 +29,8 @@ export default function FormInput({
           autoComplete={autoComplete}
           autoCorrect={false}
           accessibilityLabel={label}
-          accessibilityState={{ invalid: Boolean(error) }}
+          aria-invalid={Boolean(error)}
+          accessibilityHint={error || undefined}
           keyboardType={keyboardType}
           multiline={multiline}
           numberOfLines={numberOfLines}
@@ -37,7 +38,7 @@ export default function FormInput({
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
-          placeholderTextColor="#87928C"
+          placeholderTextColor="#627168"
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           style={[styles.input, multiline && styles.multilineInput]}
           testID={testID}
@@ -45,13 +46,13 @@ export default function FormInput({
         />
         {canTogglePassword ? (
           <Pressable
-            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
+            accessibilityLabel={`${isPasswordVisible ? 'Hide' : 'Show'} ${(label || 'password').toLowerCase()}`}
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => setIsPasswordVisible((visible) => !visible)}
             style={styles.passwordToggle}
           >
-            <MaterialCommunityIcons color="#587064" name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={22} />
+            <MaterialCommunityIcons accessible={false} color="#587064" name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={22} />
           </Pressable>
         ) : null}
       </View>
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 52,
     paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   multilineInput: { paddingBottom: 12, paddingTop: 12, textAlignVertical: 'top' },
   inputFrame: {

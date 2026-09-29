@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const Proposal = require('../models/Proposal');
+const Vote = require('../models/Vote');
+const Household = require('../models/Household');
+const { createPublicationNotifications, createCancellationNotifications } = require('../services/notificationService');
 const { getDateDrivenStatus, refreshProposalStatuses } = require('../services/proposalStatusService');
 
 const editableFields = [
@@ -14,7 +17,7 @@ const editableFields = [
   'votingDeadline',
 ];
 
-const proposalSelect = 'title summary description benefits estimatedCost householdImpact votingStartDate votingDeadline status createdBy publishedAt cancellationReason createdAt updatedAt';
+const proposalSelect = 'title summary description benefits estimatedCost householdImpact votingStartDate votingDeadline status createdBy publishedAt cancellationReason archivedAt createdAt updatedAt';
 
 const toSafeProposer = (createdBy) => {
   if (!createdBy || !createdBy._id) {
@@ -41,6 +44,7 @@ const toSafeProposal = (proposal) => ({
   proposer: toSafeProposer(proposal.createdBy),
   publishedAt: proposal.publishedAt,
   cancellationReason: proposal.cancellationReason,
+  archivedAt: proposal.archivedAt || null,
   createdAt: proposal.createdAt,
   updatedAt: proposal.updatedAt,
 });
@@ -94,10 +98,7 @@ const getProposalForAdmin = async (id, userId) => {
     return { error: 'missing' };
   }
 
-  if (!proposal.createdBy.equals(userId)) {
-    return { error: 'forbidden' };
-  }
-
+  // Routes require current DB-backed admin permission; creator is audit history.
   return { proposal };
 };
 
@@ -125,7 +126,7 @@ const createProposal = async (req, res) => {
 const listAdminProposals = async (req, res) => {
   try {
     await refreshProposalStatuses();
-    const proposals = await Proposal.find({ createdBy: req.user._id })
+    const proposals = await Proposal.find({})
       .select(proposalSelect)
       .populate('createdBy', 'name')
       .sort({ updatedAt: -1 });
@@ -201,7 +202,12 @@ const publishProposal = async (req, res) => {
 
     proposal.status = getDateDrivenStatus({ ...proposal.toObject(), status: 'upcoming' });
     proposal.publishedAt = new Date();
+    proposal.publicationNotificationsPending = true;
     await proposal.save();
+    // A notification outage must not turn a successful publish into a failure.
+    // The worker retries any pending fan-out with unique recipient event keys.
+    try { await createPublicationNotifications(proposal); }
+    catch (error) { console.error('Publication notifications pending retry:', error.message); }
     await proposal.populate('createdBy', 'name');
 
     return res.status(200).json({ proposal: toSafeProposal(proposal) });
@@ -232,13 +238,40 @@ const cancelProposal = async (req, res) => {
 
     proposal.status = 'cancelled';
     proposal.cancellationReason = cancellationReason.trim();
+    proposal.cancellationNotificationsPending = Boolean(proposal.publishedAt);
     await proposal.save();
+    try { await createCancellationNotifications(proposal); }
+    catch (error) { console.error('Cancellation notifications pending retry:', error.message); }
     await proposal.populate('createdBy', 'name');
 
     return res.status(200).json({ proposal: toSafeProposal(proposal) });
   } catch (error) {
     console.error('Proposal cancellation failed:', error.message);
     return res.status(500).json({ message: 'Unable to cancel proposal at this time.' });
+  }
+};
+
+const archiveProposal = async (req, res) => {
+  try {
+    const result = await getProposalForAdmin(req.params.id, req.user._id);
+    if (result.error === 'invalid') return res.status(400).json({ message: 'Invalid proposal ID.' });
+    if (result.error === 'missing') return res.status(404).json({ message: 'Proposal not found.' });
+    if (result.error === 'forbidden') return res.status(403).json({ message: 'You cannot manage this proposal.' });
+    if (result.proposal.archivedAt) return res.status(409).json({ message: 'This proposal is already archived.' });
+    if (result.proposal.status !== 'cancelled') return res.status(409).json({ message: 'Only cancelled proposals can be archived.' });
+
+    // Compare-and-set prevents duplicate requests from changing the audit timestamp.
+    // Null also matches legacy records without archive fields. Lifecycle stays cancelled.
+    const proposal = await Proposal.findOneAndUpdate(
+      { _id: req.params.id, status: 'cancelled', archivedAt: null },
+      { $set: { archivedAt: new Date(), archivedBy: req.user._id } },
+      { returnDocument: 'after' }
+    ).select(proposalSelect).populate('createdBy', 'name');
+    if (!proposal) return res.status(409).json({ message: 'This proposal has changed or is already archived. Please refresh and try again.' });
+    return res.status(200).json({ proposal: toSafeProposal(proposal) });
+  } catch (error) {
+    console.error('Proposal archiving failed:', error.message);
+    return res.status(500).json({ message: 'Unable to archive proposal at this time.' });
   }
 };
 
@@ -264,7 +297,7 @@ const deleteDraft = async (req, res) => {
 const listPublishedProposals = async (req, res) => {
   try {
     await refreshProposalStatuses();
-    const proposals = await Proposal.find({ status: { $in: ['active', 'upcoming', 'closed'] } })
+    const proposals = await Proposal.find({ status: { $in: ['active', 'upcoming', 'closed'] }, archivedAt: null })
       .select(proposalSelect)
       .populate('createdBy', 'name');
 
@@ -275,7 +308,14 @@ const listPublishedProposals = async (req, res) => {
       return new Date(left.votingStartDate) - new Date(right.votingStartDate);
     });
 
-    return res.status(200).json({ proposals: proposals.map(toSafeProposal) });
+    const validHousehold = req.user.household && await Household.exists({ _id: req.user.household });
+    const voted = validHousehold ? await Vote.distinct('proposal', {
+      household: req.user.household, proposal: { $in: proposals.map((item) => item._id) },
+    }) : [];
+    const votedIds = new Set(voted.map(String));
+    return res.status(200).json({ proposals: proposals.map((item) => ({ ...toSafeProposal(item),
+      householdHasVoted: validHousehold ? votedIds.has(String(item._id)) : null,
+    })) });
   } catch (error) {
     console.error('Proposal listing failed:', error.message);
     return res.status(500).json({ message: 'Unable to retrieve proposals at this time.' });
@@ -296,7 +336,7 @@ const getProposalDetails = async (req, res) => {
       return res.status(404).json({ message: 'Proposal not found.' });
     }
 
-    const isOwnerAdmin = req.user.isCoopAdmin === true && proposal.createdBy._id.equals(req.user._id);
+    const isOwnerAdmin = req.user.isCoopAdmin === true;
     if (proposal.status === 'draft' && !isOwnerAdmin) {
       return res.status(403).json({ message: 'You are not authorised to view this draft proposal.' });
     }
@@ -309,6 +349,7 @@ const getProposalDetails = async (req, res) => {
 };
 
 module.exports = {
+  archiveProposal,
   cancelProposal,
   createProposal,
   deleteDraft,

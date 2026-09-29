@@ -33,7 +33,7 @@ export default function ProposalForm({ initialValues, isSubmitting, onSubmit, su
   return (
     <View>
       <Text style={styles.groupTitle}>Proposal information</Text>
-      <Text style={styles.groupDescription}>Explain the decision clearly for participating households.</Text>
+      <Text style={styles.groupDescription}>All fields are required.</Text>
       <FormInput label="Title" onChangeText={update('title')} placeholder="Proposal title" value={form.title} />
       <FormInput label="Summary" multiline numberOfLines={3} onChangeText={update('summary')} placeholder="A short overview for households" value={form.summary} />
       <FormInput label="Description" multiline numberOfLines={5} onChangeText={update('description')} placeholder="Describe the proposal" value={form.description} />
@@ -42,7 +42,7 @@ export default function ProposalForm({ initialValues, isSubmitting, onSubmit, su
       <FormInput keyboardType="decimal-pad" label="Estimated Cost" onChangeText={update('estimatedCost')} placeholder="For example: 2500" value={String(form.estimatedCost)} />
       <FormInput label="Household Impact" multiline numberOfLines={3} onChangeText={update('householdImpact')} placeholder="What this means for participating households" value={form.householdImpact} />
       <Text style={styles.groupTitle}>Voting schedule</Text>
-      <Text style={styles.dateHint}>Choose when voting opens and when it closes. Times use your device’s local time.</Text>
+      <Text style={styles.dateHint}>Times use your device’s local time.</Text>
       <ProposalDateTimeField label="Voting starts" onChange={update('votingStartDate')} value={form.votingStartDate} />
       <ProposalDateTimeField label="Voting deadline" minimumDate={form.votingStartDate} onChange={update('votingDeadline')} value={form.votingDeadline} />
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
@@ -52,7 +52,7 @@ export default function ProposalForm({ initialValues, isSubmitting, onSubmit, su
 }
 
 const styles = StyleSheet.create({
-  groupTitle: { color: '#173322', fontSize: 16, fontWeight: '800', marginBottom: 5, marginTop: 6 },
+  groupTitle: { color: '#173322', fontSize: 16, fontWeight: '700', marginBottom: 8, marginTop: 12 },
   groupDescription: { color: '#627168', fontSize: 13, lineHeight: 19, marginBottom: 14 },
   dateHint: { color: '#627168', fontSize: 13, lineHeight: 19, marginBottom: 12, marginTop: -2 },
 });

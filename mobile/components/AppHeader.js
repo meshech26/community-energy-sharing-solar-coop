@@ -5,7 +5,7 @@ import BrandMark from './BrandMark';
 import RoleBadge from './RoleBadge';
 import { useAuthStore } from '../store/authStore';
 
-export default function AppHeader() {
+export default function AppHeader({ onAccount }) {
   const { logout, user } = useAuthStore();
   const firstName = user?.name?.trim().split(' ')[0] || 'Member';
 
@@ -16,12 +16,13 @@ export default function AppHeader() {
           <BrandMark size={40} style={styles.brandIcon} />
           <View style={styles.identity}>
             <Text style={styles.brand}>Solar Share</Text>
-            <Text numberOfLines={1} style={styles.greeting}>Hello, {firstName}</Text>
+            <Text style={styles.greeting}>Hello, {firstName}</Text>
           </View>
         </View>
 
         <View style={styles.actions}>
           {user?.isCoopAdmin === true ? <RoleBadge /> : null}
+          {onAccount ? <Pressable accessibilityLabel="My Account" accessibilityRole="button" onPress={onAccount} style={styles.logoutButton}><MaterialCommunityIcons color="#31523E" name="account-circle-outline" size={23} /></Pressable> : null}
           <Pressable accessibilityLabel="Log out" accessibilityRole="button" hitSlop={8} onPress={logout} style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}>
             <MaterialCommunityIcons color="#31523E" name="logout-variant" size={21} />
           </Pressable>
@@ -46,6 +47,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     maxWidth: 680,
+    flexWrap: 'wrap',
+    rowGap: 8,
+    paddingVertical: 8,
     minHeight: 68,
     paddingHorizontal: 20,
     width: '100%',
@@ -54,6 +58,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     flexShrink: 1,
+    flexBasis: 170,
+    flexGrow: 1,
   },
   brandIcon: {
     marginRight: 10,
@@ -64,7 +70,7 @@ const styles = StyleSheet.create({
   brand: {
     color: '#173322',
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   greeting: {
     color: '#6A776E',
@@ -74,16 +80,17 @@ const styles = StyleSheet.create({
   actions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
-    marginLeft: 12,
+    gap: 8,
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
   logoutButton: {
     alignItems: 'center',
     backgroundColor: '#F2F7F3',
     borderRadius: 17,
-    height: 38,
+    minHeight: 44,
     justifyContent: 'center',
-    width: 38,
+    minWidth: 44,
   },
   logoutButtonPressed: {
     backgroundColor: '#E2EDE5',

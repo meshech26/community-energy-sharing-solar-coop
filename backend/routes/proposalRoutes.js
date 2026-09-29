@@ -1,6 +1,7 @@
 const express = require('express');
 
 const {
+  archiveProposal,
   cancelProposal,
   createProposal,
   deleteDraft,
@@ -25,6 +26,7 @@ router.patch('/:id/draft', requireCoopAdmin, updateDraft);
 router.delete('/:id/draft', requireCoopAdmin, deleteDraft);
 router.post('/:id/publish', requireCoopAdmin, publishProposal);
 router.post('/:id/cancel', requireCoopAdmin, cancelProposal);
+router.patch('/:id/archive', requireCoopAdmin, archiveProposal);
 router.post('/:id/vote', submitVote);
 router.get('/:id/vote/status', getVoteStatus);
 router.get('/:id/results', getResults);

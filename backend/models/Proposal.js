@@ -55,6 +55,11 @@ const proposalSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Saved atomically with publishing so notification fan-out survives restart.
+    publicationNotificationsPending: { type: Boolean, default: false },
+    cancellationNotificationsPending: { type: Boolean, default: false },
+    archivedAt: { type: Date, default: null },
+    archivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     cancellationReason: {
       type: String,
       trim: true,

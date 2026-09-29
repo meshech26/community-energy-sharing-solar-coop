@@ -1,0 +1,13 @@
+const router = require('express').Router();
+const auth = require('../middleware/authMiddleware');
+const admin = require('../middleware/requireCoopAdmin');
+const controller = require('../controllers/adminTransferController');
+router.use(auth);
+router.get('/', admin, controller.summary);
+router.get('/members', admin, controller.members);
+router.post('/', admin, controller.create);
+router.get('/:id', controller.details);
+router.post('/:id/accept', controller.respond('accepted'));
+router.post('/:id/decline', controller.respond('declined'));
+router.post('/:id/cancel', admin, controller.respond('cancelled'));
+module.exports = router;

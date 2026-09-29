@@ -7,7 +7,7 @@ import ErrorMessage from '../../components/ErrorMessage';
 import LoadingState from '../../components/LoadingState';
 import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
-import SectionHeader from '../../components/SectionHeader';
+import { SectionHeader, screenSpacing } from '../../components/community/CommunityUI';
 import ResultsSummary from '../../components/community/ResultsSummary';
 import { getResults } from '../../services/proposalService';
 import { formatProposalDate, getCommunityError } from '../../utils/community';
@@ -31,7 +31,7 @@ export default function VotingResultsScreen({ route }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader description={proposalTitle} eyebrow="Community vote" title="Final results" />
+        <SectionHeader description={proposalTitle} title="Final results" />
         {isLoading ? <LoadingState label="Loading final results…" /> : null}
         {error ? <View><ErrorMessage>{error}</ErrorMessage><SecondaryButton onPress={loadResults}>Try again</SecondaryButton></View> : null}
         {!isLoading && !error && results ? (
@@ -52,8 +52,8 @@ export default function VotingResultsScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 24, paddingTop: 30 },
-  closedNote: { alignItems: 'center', marginBottom: 6, marginTop: 2 },
-  closedNoteLabel: { color: '#6A776E', fontSize: 13, fontWeight: '700', marginBottom: 3, textTransform: 'uppercase' },
-  closedNoteValue: { color: '#526158', fontSize: 14 },
+  content: { flexGrow: 1, ...screenSpacing },
+  closedNote: { alignItems: 'center', borderTopWidth: 1, borderTopColor: '#DDE5DF', paddingTop: 14, marginBottom: 6, marginTop: 2 },
+  closedNoteLabel: { color: '#627168', fontSize: 13, fontWeight: '500', marginBottom: 4 },
+  closedNoteValue: { color: '#526158', fontSize: 14, textAlign: 'center' },
 });

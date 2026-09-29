@@ -7,6 +7,7 @@ export const createProposal = async (payload) => (await api.post('/proposals', p
 export const updateDraft = async (proposalId, payload) => (await api.patch(`/proposals/${proposalId}/draft`, payload)).data.proposal;
 export const deleteDraft = async (proposalId) => (await api.delete(`/proposals/${proposalId}/draft`)).data;
 export const publishProposal = async (proposalId) => (await api.post(`/proposals/${proposalId}/publish`)).data.proposal;
+export const archiveProposal = async (proposalId) => (await api.patch(`/proposals/${proposalId}/archive`)).data.proposal;
 export const cancelProposal = async (proposalId, cancellationReason) => (
   await api.post(`/proposals/${proposalId}/cancel`, { cancellationReason })
 ).data.proposal;

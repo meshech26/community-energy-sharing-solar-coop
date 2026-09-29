@@ -4,6 +4,7 @@ export const useAuthStore = create((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
+  updateUser: (user) => set((state) => state.user?.id === user?.id ? { user } : {}),
 
   login: (user, token) =>
     set({

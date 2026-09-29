@@ -5,7 +5,8 @@ const tones = {
   blue: { backgroundColor: '#E8F1FA', borderColor: '#BED6EF', color: '#245B87' },
   neutral: { backgroundColor: '#F1F4F2', borderColor: '#D8E0DA', color: '#526158' },
   warning: { backgroundColor: '#FFF4DE', borderColor: '#F4D89F', color: '#8A5A00' },
-  danger: { backgroundColor: '#FCECED', borderColor: '#EEC1C5', color: '#A13F4A' },
+  danger: { backgroundColor: '#FCECED', borderColor: '#EEC1C5', color: '#B14B56' },
+  archived: { backgroundColor: '#F1F4F2', borderColor: '#D8E0DA', color: '#607068' },
 };
 
 export default function StatusBadge({ label, tone = 'neutral' }) {

@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Internal transaction write guard; never returned in authenticated user DTOs.
+    adminTransferRevision: { type: Number, default: 0, select: false },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date, select: false },
   },
   {
     timestamps: true,

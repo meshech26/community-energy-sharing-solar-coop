@@ -7,9 +7,9 @@ export default function EmptyState({ description, icon = 'leaf-circle-outline', 
   return (
     <Card style={styles.card}>
       <View style={styles.iconWrap}>
-        <MaterialCommunityIcons color="#16764C" name={icon} size={29} />
+        <MaterialCommunityIcons accessible={false} color="#16764C" name={icon} size={29} />
       </View>
-      <Text style={styles.title}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
     </Card>
   );
@@ -26,6 +26,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: 54,
   },
-  title: { color: '#173322', fontSize: 18, fontWeight: '800', lineHeight: 23, marginBottom: 6 },
-  description: { color: '#627168', fontSize: 16, lineHeight: 24 },
+  title: { color: '#173322', fontSize: 17, fontWeight: '700', lineHeight: 23, marginBottom: 6 },
+  description: { color: '#627168', fontSize: 15, lineHeight: 22 },
 });

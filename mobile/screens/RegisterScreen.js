@@ -67,7 +67,7 @@ export default function RegisterScreen({ navigation }) {
               <BrandMark size={48} />
               <Text style={styles.brand}>Solar Share</Text>
             </View>
-            <SectionHeader description="Use the household invitation code provided by your co-op." title="Join your community" />
+            <SectionHeader compact description="Use the household invitation code provided by your co-op." title="Join your community" />
 
             <Card>
               <FormInput autoComplete="name" autoCapitalize="words" label="Full Name" onChangeText={setName} placeholder="Your full name" testID="register-name" value={name} />
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 28 },
   formColumn: { alignSelf: 'center', maxWidth: 440, width: '100%' },
   brandLockup: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 26 },
-  brand: { color: '#173322', fontSize: 20, fontWeight: '800', letterSpacing: -0.2 },
-  linkButton: { alignSelf: 'center', marginTop: 24, padding: 8 },
+  brand: { color: '#173322', fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  linkButton: { alignSelf: 'center', justifyContent: 'center', minHeight: 44, marginTop: 16, padding: 8 },
   linkText: { color: '#627168', fontSize: 14 },
-  linkEmphasis: { color: '#14633F', fontWeight: '700' },
+  linkEmphasis: { color: '#14633F', fontWeight: '600' },
 });

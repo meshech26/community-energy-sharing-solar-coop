@@ -56,13 +56,14 @@ export default function LoginScreen({ navigation }) {
               <BrandMark size={56} />
               <Text style={styles.brand}>Solar Share</Text>
             </View>
-            <SectionHeader description="Sign in to take part in your community energy co-op." title="Welcome back" />
+            <SectionHeader compact description="Sign in to your Solar Share account." title="Welcome back" />
 
             <Card>
               <FormInput autoComplete="email" keyboardType="email-address" label="Email" onChangeText={setEmail} placeholder="you@example.com" testID="login-email" value={email} />
               <FormInput autoComplete="current-password" label="Password" onChangeText={setPassword} placeholder="Your password" secureTextEntry testID="login-password" value={password} />
               {error ? <ErrorMessage>{error}</ErrorMessage> : null}
               <PrimaryButton loading={isSubmitting} onPress={submit} testID="login-submit">Sign In</PrimaryButton>
+              <Pressable accessibilityRole="button" onPress={() => navigation.navigate('ForgotPassword')} style={styles.linkButton}><Text style={styles.linkEmphasis}>Forgot password?</Text></Pressable>
             </Card>
 
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Register')} style={styles.linkButton}>
@@ -80,8 +81,8 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 28 },
   formColumn: { alignSelf: 'center', maxWidth: 440, width: '100%' },
   brandLockup: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 30 },
-  brand: { color: '#173322', fontSize: 20, fontWeight: '800', letterSpacing: -0.2 },
-  linkButton: { alignSelf: 'center', marginTop: 24, padding: 8 },
+  brand: { color: '#173322', fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  linkButton: { alignSelf: 'center', justifyContent: 'center', minHeight: 44, marginTop: 16, padding: 8 },
   linkText: { color: '#627168', fontSize: 14 },
-  linkEmphasis: { color: '#14633F', fontWeight: '700' },
+  linkEmphasis: { color: '#14633F', fontWeight: '600' },
 });

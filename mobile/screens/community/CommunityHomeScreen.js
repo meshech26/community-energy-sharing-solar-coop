@@ -8,8 +8,9 @@ import LoadingState from '../../components/LoadingState';
 import PrimaryButton from '../../components/PrimaryButton';
 import ScreenContainer from '../../components/ScreenContainer';
 import SecondaryButton from '../../components/SecondaryButton';
-import SectionHeader from '../../components/SectionHeader';
+import { screenSpacing } from '../../components/community/CommunityUI';
 import ProposalCard from '../../components/community/ProposalCard';
+import NotificationBell from '../../components/community/NotificationBell';
 import ProposalSearchField from '../../components/community/ProposalSearchField';
 import { listPublishedProposals } from '../../services/proposalService';
 import { useAuthStore } from '../../store/authStore';
@@ -27,6 +28,7 @@ export default function CommunityHomeScreen({ navigation }) {
 
   const loadProposals = useCallback(async () => {
     setIsLoading(true);
+    setProposals([]);
     setError('');
     try {
       setProposals(await listPublishedProposals());
@@ -35,7 +37,7 @@ export default function CommunityHomeScreen({ navigation }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => { loadProposals(); }, [loadProposals]));
 
@@ -47,16 +49,14 @@ export default function CommunityHomeScreen({ navigation }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader description="Take part in decisions that affect your co-op." eyebrow="Co-op Proposals & Voting" title="Community" />
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Text accessibilityRole="header" style={styles.title}>Community</Text>
+            <NotificationBell onPress={() => navigation.navigate('Notifications')} />
+          </View>
+        </View>
 
         <ProposalSearchField onChangeText={setSearchQuery} value={searchQuery} />
-
-        {user?.isCoopAdmin === true ? (
-          <View style={styles.adminActions}>
-            <PrimaryButton onPress={() => navigation.navigate('CreateProposal')}>Create Proposal</PrimaryButton>
-            <SecondaryButton onPress={() => navigation.navigate('ManageProposals')}>Manage Proposals</SecondaryButton>
-          </View>
-        ) : null}
 
         <View accessibilityRole="tablist" style={styles.filters}>
           {filters.map((status) => {
@@ -69,13 +69,20 @@ export default function CommunityHomeScreen({ navigation }) {
                 accessibilityState={{ selected }}
                 key={status}
                 onPress={() => setFilter(status)}
-                style={({ pressed }) => [styles.filter, selected && { backgroundColor: `${accent}12`, borderColor: accent }, pressed && styles.filterPressed]}
+                style={({ pressed }) => [styles.filter, selected && { backgroundColor: `${accent}12`, borderColor: accent, borderBottomWidth: 3 }, pressed && styles.filterPressed]}
               >
                 <Text style={[styles.filterLabel, selected && { color: accent }]}>{getProposalStatusLabel(status)} {counts[status]}</Text>
               </Pressable>
             );
           })}
         </View>
+
+        {user?.isCoopAdmin === true ? (
+          <View style={styles.adminActions}>
+            <PrimaryButton onPress={() => navigation.navigate('CreateProposal')}>Create Proposal</PrimaryButton>
+            <SecondaryButton onPress={() => navigation.navigate('ManageProposals')}>Co-op Management</SecondaryButton>
+          </View>
+        ) : null}
 
         {isLoading ? <LoadingState label="Loading community proposals…" /> : null}
         {error ? (
@@ -107,11 +114,14 @@ export default function CommunityHomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 24, paddingTop: 30 },
-  adminActions: { gap: 10, marginBottom: 22 },
-  filters: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  filter: { alignItems: 'center', borderColor: '#DDE5DF', borderRadius: 10, borderWidth: 1, flex: 1, minHeight: 42, paddingHorizontal: 6, justifyContent: 'center' },
+  content: { flexGrow: 1, ...screenSpacing },
+  header: { marginBottom: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  title: { flex: 1, color: '#173322', fontSize: 26, fontWeight: '700', lineHeight: 32, paddingTop: 8 },
+
+  adminActions: { gap: 8, marginBottom: 16 },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  filter: { alignItems: 'center', borderColor: '#DDE5DF', borderRadius: 4, borderBottomWidth: 2, flexGrow: 1, flexBasis: 80, minHeight: 44, paddingHorizontal: 6, paddingVertical: 10, justifyContent: 'center' },
   filterPressed: { opacity: 0.78 },
-  filterLabel: { color: '#627168', fontSize: 12, fontWeight: '700' },
-  filterLabelSelected: { color: '#14633F' },
+  filterLabel: { color: '#627168', fontSize: 13, fontWeight: '600', textAlign: 'center' },
 });

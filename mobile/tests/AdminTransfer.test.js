@@ -1,0 +1,130 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
+import ManageCoopAdminScreen from '../screens/community/ManageCoopAdminScreen';
+import AdminTransferRequestScreen from '../screens/community/AdminTransferRequestScreen';
+import CommunityNavigator from '../navigation/CommunityNavigator';
+import { getAdminTransferSummary, getEligibleAdminMembers, nominateAdministrator, getAdminTransfer, respondToAdminTransfer } from '../services/adminTransferService';
+import { refreshCurrentUser } from '../services/currentUserService';
+import { useAuthStore } from '../store/authStore';
+
+jest.mock('../services/adminTransferService', () => ({ getAdminTransferSummary: jest.fn(), getEligibleAdminMembers: jest.fn(), nominateAdministrator: jest.fn(), getAdminTransfer: jest.fn(), respondToAdminTransfer: jest.fn() }));
+jest.mock('../services/currentUserService', () => ({ refreshCurrentUser: jest.fn() }));
+jest.mock('../services/proposalService', () => ({ listPublishedProposals: jest.fn().mockResolvedValue([]) }));
+const admin = { id: 'admin', name: 'Current admin', email: 'admin@example.test', isCoopAdmin: true };
+const target = { id: 'target', name: 'Selected member', email: 'member@example.test', householdName: 'Household 02', isCoopAdmin: false };
+const request = { id: 'request', currentAdmin: admin, targetUser: target, status: 'pending' };
+const navigation = { navigate: jest.fn() };
+const mount = (screen) => render(<NavigationContainer>{screen}</NavigationContainer>);
+beforeEach(() => {
+  jest.clearAllMocks();
+  useAuthStore.getState().login(admin, 'test-token');
+  getAdminTransferSummary.mockResolvedValue({ currentAdmin: admin, pendingRequest: null });
+  getEligibleAdminMembers.mockResolvedValue([target]);
+  getAdminTransfer.mockResolvedValue(request);
+  nominateAdministrator.mockResolvedValue(request);
+  respondToAdminTransfer.mockResolvedValue({ ...request, status: 'accepted' });
+  refreshCurrentUser.mockImplementation(async () => {
+    const user = { ...target, isCoopAdmin: true };
+    useAuthStore.getState().updateUser(user);
+    return user;
+  });
+});
+afterEach(async () => { await cleanup(); useAuthStore.getState().logout(); });
+test('admin selects an accessible member and reviews before sending; nomination keeps current role', async () => {
+  const view = await mount(<ManageCoopAdminScreen />);
+  await fireEvent.press(await view.findByText('Transfer Administrator Role'));
+  const row = view.getByLabelText(`Select ${target.name}, ${target.email}`);
+  await fireEvent.press(row);
+  expect(view.getByLabelText(`Select ${target.name}, ${target.email}`).props.accessibilityState.checked).toBe(true);
+  expect(view.getByRole('button', { name: 'Review transfer' })).toHaveStyle({ backgroundColor: '#356FA3' });
+  await fireEvent.press(view.getByText('Review transfer'));
+  expect(view.getByRole('button', { name: 'Send Transfer Request' })).toHaveStyle({ backgroundColor: '#356FA3' });
+  expect(nominateAdministrator).not.toHaveBeenCalled();
+  expect(view.getByText(/You remain the administrator until they accept/)).toBeTruthy();
+  getAdminTransferSummary.mockResolvedValue({ currentAdmin: admin, pendingRequest: request });
+  await fireEvent.press(view.getByText('Send Transfer Request'));
+  expect(nominateAdministrator).toHaveBeenCalledWith(target.id);
+  expect(await view.findByText('Pending Administrator Transfer')).toBeTruthy();
+  expect(useAuthStore.getState().user.isCoopAdmin).toBe(true);
+});
+test('member cannot access nomination UI or fetch private member directory', async () => {
+  useAuthStore.getState().login(target, 'test-token');
+  const view = await mount(<ManageCoopAdminScreen />);
+  expect(view.queryByText('Transfer Administrator Role')).toBeNull();
+  expect(getEligibleAdminMembers).not.toHaveBeenCalled();
+});
+test('empty directory and member search give useful feedback', async () => {
+  const view = await mount(<ManageCoopAdminScreen />);
+  await fireEvent.press(await view.findByText('Transfer Administrator Role'));
+  await fireEvent.changeText(view.getByLabelText('Search members'), 'not found');
+  expect(view.getByText('No members match your search.')).toBeTruthy();
+  await view.unmount();
+  getEligibleAdminMembers.mockResolvedValue([]);
+  const empty = await mount(<ManageCoopAdminScreen />);
+  await fireEvent.press(await empty.findByText('Transfer Administrator Role'));
+  expect(empty.getByText('No eligible members available.')).toBeTruthy();
+});
+test('pending request can be cancelled with confirmation and no role change', async () => {
+  getAdminTransferSummary.mockResolvedValue({ currentAdmin: admin, pendingRequest: request });
+  respondToAdminTransfer.mockResolvedValue({ ...request, status: 'cancelled' });
+  const view = await mount(<ManageCoopAdminScreen />);
+  await fireEvent.press(await view.findByText('Cancel Request'));
+  getAdminTransferSummary.mockResolvedValue({ currentAdmin: admin, pendingRequest: null });
+  const buttons = view.getAllByText('Cancel Request');
+  const cancelActions = view.getAllByRole('button', { name: 'Cancel Request' });
+  expect(cancelActions[cancelActions.length - 1]).toHaveStyle({ backgroundColor: '#B14B56' });
+  await fireEvent.press(buttons[buttons.length - 1]);
+  expect(respondToAdminTransfer).toHaveBeenCalledWith(request.id, 'cancel');
+  expect(await view.findByText('Transfer Administrator Role')).toBeTruthy();
+  expect(useAuthStore.getState().user.isCoopAdmin).toBe(true);
+});
+test('recipient accepts only after confirmation, refreshes role and sees success', async () => {
+  useAuthStore.getState().login(target, 'test-token');
+  const view = await mount(<AdminTransferRequestScreen navigation={navigation} route={{ params: { transferRequestId: request.id } }} />);
+  expect(await view.findByRole('button', { name: 'Accept' })).toHaveStyle({ backgroundColor: '#356FA3' });
+  await fireEvent.press(await view.findByText('Accept'));
+  expect(respondToAdminTransfer).not.toHaveBeenCalled();
+  expect(view.getByRole('button', { name: 'Accept Role' })).toHaveStyle({ backgroundColor: '#356FA3' });
+  await fireEvent.press(view.getByText('Accept Role'));
+  expect(respondToAdminTransfer).toHaveBeenCalledWith(request.id, 'accept');
+  expect(await view.findByText('You are now the Co-op Administrator.')).toBeTruthy();
+  expect(refreshCurrentUser).toHaveBeenCalled();
+  expect(useAuthStore.getState().user.isCoopAdmin).toBe(true);
+  await fireEvent.press(view.getByText('Back to Community'));
+  expect(navigation.navigate).toHaveBeenCalledWith('CommunityHome');
+});
+test('recipient decline preserves membership and shows terminal state', async () => {
+  useAuthStore.getState().login(target, 'test-token');
+  respondToAdminTransfer.mockResolvedValue({ ...request, status: 'declined' });
+  refreshCurrentUser.mockResolvedValue(target);
+  const view = await mount(<AdminTransferRequestScreen navigation={navigation} route={{ params: { transferRequestId: request.id } }} />);
+  await fireEvent.press(await view.findByText('Decline'));
+  expect(respondToAdminTransfer).toHaveBeenCalledWith(request.id, 'decline');
+  expect(await view.findByText('Administrator request declined.')).toBeTruthy();
+  expect(view.queryByText('Accept')).toBeNull();
+  expect(useAuthStore.getState().user.isCoopAdmin).toBe(false);
+});
+test('cancelled request has no acceptance action and failures do not grant permissions', async () => {
+  useAuthStore.getState().login(target, 'test-token');
+  getAdminTransfer.mockResolvedValue({ ...request, status: 'cancelled' });
+  const view = await mount(<AdminTransferRequestScreen navigation={navigation} route={{ params: { transferRequestId: request.id } }} />);
+  await view.findByText('This administrator request was cancelled.');
+  expect(view.queryByText('Accept')).toBeNull();
+  await view.unmount();
+  getAdminTransfer.mockResolvedValue(request);
+  respondToAdminTransfer.mockRejectedValueOnce({ response: { status: 409, data: { message: 'This transfer request is no longer pending.' } } });
+  const stale = await mount(<AdminTransferRequestScreen navigation={navigation} route={{ params: { transferRequestId: request.id } }} />);
+  await fireEvent.press(await stale.findByText('Accept'));
+  await fireEvent.press(stale.getByText('Accept Role'));
+  expect(await stale.findByText('This transfer request is no longer pending.')).toBeTruthy();
+  expect(useAuthStore.getState().user.isCoopAdmin).toBe(false);
+});
+test('demotion removes admin-only routes and controls without logging out', async () => {
+  const view = await mount(<CommunityNavigator />);
+  await fireEvent.press(await view.findByText('Co-op Management'));
+  // This screen fetch is not needed to test route removal.
+  await act(async () => { useAuthStore.getState().updateUser({ ...admin, isCoopAdmin: false }); });
+  await waitFor(() => expect(view.queryByLabelText('Administrator section')).toBeNull());
+  expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  expect(view.queryByText('Create Proposal')).toBeNull();
+});

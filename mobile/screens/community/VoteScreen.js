@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
-import Card from '../../components/Card';
+import { Card } from '../../components/community/CommunityUI';
 import PrimaryButton from '../../components/PrimaryButton';
 import ScreenContainer from '../../components/ScreenContainer';
-import SectionHeader from '../../components/SectionHeader';
+import { SectionHeader, screenSpacing } from '../../components/community/CommunityUI';
 import VoteOption from '../../components/community/VoteOption';
 import VotePrivacyCallout from '../../components/community/VotePrivacyCallout';
 
@@ -15,7 +15,7 @@ export default function VoteScreen({ navigation, route }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader description={proposalTitle} eyebrow="Community vote" title="Choose your household vote" />
+        <SectionHeader description={proposalTitle} title="Choose your household vote" />
         <VotePrivacyCallout />
         <Card style={styles.card}>
           <Text style={styles.supporting}>Your household can submit one final vote for this proposal.</Text>
@@ -30,7 +30,7 @@ export default function VoteScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 24, paddingTop: 30 },
+  content: { flexGrow: 1, ...screenSpacing },
   card: { paddingBottom: 20 },
   supporting: { color: '#627168', fontSize: 15, lineHeight: 23, marginBottom: 16 },
 });
