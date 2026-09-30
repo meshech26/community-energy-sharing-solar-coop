@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card, DangerButton } from '../../components/community/CommunityUI';
 import ProposalActionConfirmation from '../../components/community/ProposalActionConfirmation';
+import ProposalReadAloud from '../../components/community/ProposalReadAloud';
 import ErrorMessage from '../../components/ErrorMessage';
 import LoadingState from '../../components/LoadingState';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -17,16 +18,25 @@ import { deleteDraft, getProposal, getVoteStatus, publishProposal } from '../../
 import { useAuthStore } from '../../store/authStore';
 import { formatEstimatedCost, formatProposalDate, getCommunityError, getProposalTimingText } from '../../utils/community';
 
-const DetailRow = ({ icon, label, value }) => (
-  <View style={styles.detailRow}>
+const NarrationHighlight = ({ active, children }) => (
+  <View testID={active ? 'narration-highlight' : undefined} style={active ? styles.narrationHighlight : undefined}>
+    <Text accessibilityLiveRegion="polite" style={styles.screenReaderStatus}>{active ? `Reading: ${active.label}` : ''}</Text>
+    {children}
+  </View>
+);
+
+const DetailRow = ({ icon, label, value, active }) => (
+  <NarrationHighlight active={active}><View style={styles.detailRow}>
     <View style={styles.detailLabelRow}>{icon ? <MaterialCommunityIcons color="#627168" name={icon} size={16} /> : null}<Text style={styles.detailLabel}>{label}</Text></View>
     <Text style={styles.detailValue}>{value}</Text>
-  </View>
+  </View></NarrationHighlight>
 );
 
 export default function ProposalDetailsScreen({ navigation, route }) {
   const user = useAuthStore((state) => state.user);
   const { proposalId } = route.params;
+  const [activeSegment, setActiveSegment] = useState(null);
+  const active = (key) => activeSegment?.key === key ? activeSegment : null;
   const [proposal, setProposal] = useState(null);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,24 +114,25 @@ export default function ProposalDetailsScreen({ navigation, route }) {
   return (
     <ScreenContainer edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader description={proposal.summary} title={proposal.title} />
+        <NarrationHighlight active={active('title') || active('summary')}><SectionHeader description={proposal.summary} title={proposal.title} /></NarrationHighlight>
         <View style={styles.statusRow}><ProposalBadge proposal={proposal} /><Text accessibilityLiveRegion="polite" style={styles.timing}>{proposal.archivedAt ? `Archived on ${formatProposalDate(proposal.archivedAt)}` : getProposalTimingText(proposal, currentTime)}</Text></View>
         {proposal.archivedAt ? <Text style={[styles.body, styles.sectionHeading]}>Originally cancelled. This proposal is kept as a read-only historical record.</Text> : null}
         {error ? <View style={styles.inlineError}><ErrorMessage>{error}</ErrorMessage><SecondaryButton onPress={loadProposal}>Try again</SecondaryButton></View> : null}
 
+        <ProposalReadAloud proposal={proposal} onActiveSegmentChange={setActiveSegment} />
         <Card style={styles.card}>
           <Text style={styles.cardHeading}>Voting information</Text>
-          <DetailRow icon="calendar-start" label="Voting starts" value={formatProposalDate(proposal.votingStartDate)} />
-          <DetailRow icon="calendar-clock" label="Voting deadline" value={formatProposalDate(proposal.votingDeadline)} />
+          <DetailRow active={active('votingStartDate')} icon="calendar-start" label="Voting starts" value={formatProposalDate(proposal.votingStartDate)} />
+          <DetailRow active={active('votingDeadline')} icon="calendar-clock" label="Voting deadline" value={formatProposalDate(proposal.votingDeadline)} />
         </Card>
         <Card style={styles.card}>
-          <Text style={styles.cardHeading}>About this proposal</Text>
-          <Text style={styles.body}>{proposal.description}</Text>
-          <Text style={[styles.cardHeading, styles.sectionHeading]}>Expected benefits</Text>
-          <Text style={styles.body}>{proposal.benefits}</Text>
-          <DetailRow icon="cash" label="Estimated cost" value={formatEstimatedCost(proposal.estimatedCost)} />
-          <DetailRow icon="home-group" label="Household impact" value={proposal.householdImpact} />
-          <DetailRow icon="account-outline" label="Proposed by" value={proposal.proposer?.name || 'Co-op Administrator'} />
+          <NarrationHighlight active={active('description')}><Text style={styles.cardHeading}>About this proposal</Text>
+          <Text style={styles.body}>{proposal.description}</Text></NarrationHighlight>
+          <NarrationHighlight active={active('benefits')}><Text style={[styles.cardHeading, styles.sectionHeading]}>Expected benefits</Text>
+          <Text style={styles.body}>{proposal.benefits}</Text></NarrationHighlight>
+          <DetailRow active={active('estimatedCost')} icon="cash" label="Estimated cost" value={formatEstimatedCost(proposal.estimatedCost)} />
+          <DetailRow active={active('householdImpact')} icon="home-group" label="Household impact" value={proposal.householdImpact} />
+          <DetailRow active={active('proposer')} icon="account-outline" label="Proposed by" value={proposal.proposer?.name || 'Co-op Administrator'} />
         </Card>
 
         {proposal.status === 'cancelled' ? <Card style={[styles.card, styles.cancelledCard]}><View style={styles.calloutTitle}><MaterialCommunityIcons color="#B14B56" name="close-circle-outline" size={21} /><Text style={[styles.cardHeading, styles.cancelledText]}>Cancellation notice</Text></View><Text style={[styles.body, styles.cancelledText]}>{proposal.cancellationReason || 'This proposal has been cancelled.'}</Text></Card> : null}
@@ -145,6 +156,8 @@ export default function ProposalDetailsScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
+  narrationHighlight: { backgroundColor: '#F1F8F3', borderLeftWidth: 3, borderLeftColor: '#16764C', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10 },
+  screenReaderStatus: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0.01 },
   content: { flexGrow: 1, ...screenSpacing },
   card: { marginTop: 14 },
   statusRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
