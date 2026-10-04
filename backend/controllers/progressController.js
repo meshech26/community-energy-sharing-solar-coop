@@ -59,6 +59,7 @@ exports.logProgress = async (req, res) => {
     goal.progressHistory.push({ month, usageKwh, co2OffsetKg });
     goal.progressHistory.sort((a, b) => a.month.localeCompare(b.month));
     goal.co2ToDateKg += co2OffsetKg;
+    goal.aiInsight = null;
 
     const comparison = calculateMonthOverMonthComparison(goal.progressHistory, goal.targetPercentReduction);
     if (comparison.comparisonAvailable) {

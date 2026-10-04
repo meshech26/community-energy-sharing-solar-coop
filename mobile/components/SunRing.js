@@ -8,6 +8,9 @@ export default function SunRing({ percent = 0, size = 168, strokeWidth = 14, lab
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
 
+  const labelFontSize = Math.max(14, Math.round(size * 0.19));
+  const sublabelFontSize = Math.max(9, Math.round(size * 0.075));
+
   return (
     <View style={{ width: size, height: size }} className="items-center justify-center self-center">
       <Svg width={size} height={size}>
@@ -31,9 +34,15 @@ export default function SunRing({ percent = 0, size = 168, strokeWidth = 14, lab
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      <View style={{ position: "absolute" }} className="items-center">
-        <Text className="text-3xl font-bold text-ink">{label}</Text>
-        {sublabel ? <Text className="text-xs text-muted mt-1">{sublabel}</Text> : null}
+      <View style={{ position: "absolute", width: size * 0.7, alignItems: "center" }}>
+        <Text style={{ fontSize: labelFontSize }} className="font-bold text-ink" numberOfLines={1} adjustsFontSizeToFit>
+          {label}
+        </Text>
+        {sublabel ? (
+          <Text style={{ fontSize: sublabelFontSize }} className="text-muted mt-1 text-center">
+            {sublabel}
+          </Text>
+        ) : null}
       </View>
     </View>
   );

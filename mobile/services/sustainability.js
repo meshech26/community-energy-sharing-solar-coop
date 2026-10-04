@@ -24,3 +24,6 @@ export const fetchWeeklyTip = () => client.get("/sustainability/tip").then((r) =
 
 // Co-op
 export const fetchLeaderboard = () => client.get("/sustainability/coop/leaderboard").then((r) => r.data);
+
+//AI
+export const fetchInsight = () => client.get("/sustainability/insight").then((r) => r.data);

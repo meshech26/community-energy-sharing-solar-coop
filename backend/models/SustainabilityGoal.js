@@ -18,6 +18,8 @@ const sustainabilityGoalSchema = new mongoose.Schema({
   leaderboardOptIn: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  aiInsight: { type: String, default: null },
+  aiInsightGeneratedAt: { type: Date, default: null },
 });
 
 sustainabilityGoalSchema.pre("save", function () {

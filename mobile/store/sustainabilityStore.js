@@ -117,4 +117,14 @@ export const useSustainabilityStore = create((set, get) => ({
       set({ error: err.response?.data?.message || err.message });
     }
   },
+
+  loadInsight: async () => {
+  try {
+    const { insight } = await api.fetchInsight();
+    set({ insight });
+  } catch (err) {
+    set({ error: err.response?.data?.message || err.message });
+  }
+},
+
 }));

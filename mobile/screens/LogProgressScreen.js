@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, Pressable, Alert } from "react-nativ
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSustainabilityStore } from "../store/sustainabilityStore";
 import ScreenHeader from "../components/ScreenHeader";
+import Card from "../components/Card";
 import PrimaryButton from "../components/PrimaryButton";
 
 function getRecentMonths(count = 6) {
@@ -35,32 +36,36 @@ export default function LogProgressScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-surface px-6">
-      <ScreenHeader eyebrow="Monthly entry" title="Log your usage" />
+      <ScreenHeader eyebrow="Monthly entry" title="Log your usage" subtitle="Add this month's electricity reading to update your impact." />
 
-      <Text className="text-sm font-semibold text-ink mb-2">Month</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6" contentContainerStyle={{ paddingRight: 12 }}>
-        {recentMonths.map((m) => {
-          const selected = m.value === month;
-          return (
-            <Pressable
-              key={m.value}
-              onPress={() => setMonth(m.value)}
-              className={`px-4 py-2.5 rounded-full mr-2 border ${selected ? "bg-primary border-primary" : "bg-white border-border"}`}
-            >
-              <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-ink"}`}>{m.label}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <Card className="mb-6">
+        <Text className="text-sm font-semibold text-ink mb-3">Month</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
+          {recentMonths.map((m) => {
+            const selected = m.value === month;
+            return (
+              <Pressable
+                key={m.value}
+                onPress={() => setMonth(m.value)}
+                className={`px-4 py-2.5 rounded-full mr-2 border ${selected ? "bg-primary border-primary" : "bg-white border-border"}`}
+              >
+                <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-ink"}`}>{m.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </Card>
 
-      <Text className="text-sm font-semibold text-ink mb-2">Usage (kWh)</Text>
-      <TextInput
-        className="border border-border rounded-2xl px-4 py-4 text-lg text-ink bg-white mb-6"
-        keyboardType="numeric"
-        value={usageKwh}
-        onChangeText={setUsageKwh}
-        placeholder="e.g. 150"
-      />
+      <Card className="mb-6">
+        <Text className="text-sm font-semibold text-ink mb-3">Usage (kWh)</Text>
+        <TextInput
+          className="border border-border rounded-2xl px-4 py-4 text-lg text-ink bg-surface"
+          keyboardType="numeric"
+          value={usageKwh}
+          onChangeText={setUsageKwh}
+          placeholder="e.g. 150"
+        />
+      </Card>
 
       {error && <Text className="text-danger mb-4">{error}</Text>}
 

@@ -13,6 +13,8 @@ const {
 
 const { syncCoopAverage, getLeaderboard } = require("../controllers/coopController");
 
+const { getPersonalizedInsight } = require("../controllers/insightController");
+
 // Goal CRUD
 router.post("/goal", auth, createGoal);
 router.get("/goal", auth, getGoal);
@@ -31,5 +33,8 @@ router.get("/tip", auth, getWeeklyTip);
 // Co-op
 router.post("/coop/sync-average", auth, syncCoopAverage);
 router.get("/coop/leaderboard", auth, getLeaderboard);
+
+//AI
+router.get("/insight", auth, getPersonalizedInsight);
 
 module.exports = router;
