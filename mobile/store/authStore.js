@@ -1,22 +1,154 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
+import axios from 'axios';
 
-export const useAuthStore = create((set) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  updateUser: (user) => set((state) => state.user?.id === user?.id ? { user } : {}),
+let AsyncStorageInstance = null;
+const getAsyncStorage = () => {
+  if (!AsyncStorageInstance) {
+    try {
+      const mod = require('@react-native-async-storage/async-storage');
+      AsyncStorageInstance = mod.default || mod;
+    } catch (e) {
+      AsyncStorageInstance = null;
+    }
+  }
+  return AsyncStorageInstance;
+};
 
-  login: (user, token) =>
-    set({
-      user,
-      token,
-      isAuthenticated: true,
-    }),
+export const PRESET_USERS = {
+  normal: {
+    id: 'user-001',
+    name: 'Kavindi Perera',
+    email: 'user@solarcoop.com',
+    isCoopAdmin: false,
+    roleTitle: 'Co-op Member',
+    householdId: '#H-104',
+  },
+  member2: {
+    id: 'user-002',
+    name: 'Sunil Fernando',
+    email: 'sunil@solarcoop.com',
+    isCoopAdmin: false,
+    roleTitle: 'Co-op Member',
+    householdId: '#H-105',
+  },
+  admin: {
+    id: 'admin-001',
+    name: 'Co-op Admin',
+    email: 'admin@solarcoop.com',
+    isCoopAdmin: true,
+    roleTitle: 'Admin User',
+    householdId: '#H-001',
+  },
+};
 
-  logout: () =>
-    set({
+const getStorageProvider = () => {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch (e) {}
+  try {
+    const storage = getAsyncStorage();
+    if (storage) {
+      return storage;
+    }
+  } catch (e) {}
+  const memStore = {};
+  return {
+    getItem: (key) => memStore[key] || null,
+    setItem: (key, val) => {
+      memStore[key] = val;
+    },
+    removeItem: (key) => {
+      delete memStore[key];
+    },
+  };
+};
+
+export const useAuthStore = create(
+  persist(
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
+
+      login: (user, token = 'temp-jwt-token') =>
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+        }),
+
+      updateUser: (user) =>
+        set((state) => {
+          if (!state.user) return {};
+          if (state.user.id && user?.id && state.user.id !== user.id) return {};
+          return { user: { ...state.user, ...user } };
+        }),
+
+      loginWithRole: (roleType = 'normal') => {
+        const preset = PRESET_USERS[roleType] || PRESET_USERS.normal;
+        set({
+          user: { ...preset },
+          token: `temp-token-${roleType}`,
+          isAuthenticated: true,
+        });
+        return preset;
+      },
+
+      setRole: (isCoopAdmin) => {
+        const currentUser = get().user;
+        if (!currentUser) {
+          const preset = isCoopAdmin ? PRESET_USERS.admin : PRESET_USERS.normal;
+          set({ user: { ...preset }, isAuthenticated: true });
+          return;
+        }
+
+        set({
+          user: {
+            ...currentUser,
+            isCoopAdmin: Boolean(isCoopAdmin),
+            roleTitle: isCoopAdmin ? 'Admin User' : 'Co-op Member',
+          },
+        });
+      },
+
+      toggleRole: () => {
+        const currentUser = get().user;
+        const currentIsAdmin = currentUser ? currentUser.isCoopAdmin : false;
+        get().setRole(!currentIsAdmin);
+      },
+
+      logout: () =>
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        }),
     }),
-}));
+    {
+      name: 'solarcoop-auth',
+      storage: createJSONStorage(() => getStorageProvider()),
+    }
+  )
+);
+
+// Automatically inject role, email, and name into all outgoing axios requests
+axios.interceptors.request.use(
+  (config) => {
+    const { user, token } = useAuthStore.getState();
+    if (user) {
+      config.headers = config.headers || {};
+      config.headers['x-user-role'] = user.isCoopAdmin ? 'admin' : 'normal';
+      config.headers['x-user-email'] = user.email || '';
+      config.headers['x-user-name'] = user.name || '';
+      if (token && !config.headers['Authorization']) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);

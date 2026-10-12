@@ -25,7 +25,15 @@ const userSchema = new mongoose.Schema(
     household: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Household',
-      required: true,
+    },
+
+    householdId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Household',
+    },
+
+    invitationCode: {
+      type: String,
     },
 
     // Every user is a Household Member. This flag grants the additional
@@ -34,6 +42,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    publicKey: {
+      type: String,
+      default: '',
+    },
+
     // Internal transaction write guard; never returned in authenticated user DTOs.
     adminTransferRevision: { type: Number, default: 0, select: false },
     passwordResetTokenHash: { type: String, select: false },
@@ -43,5 +57,14 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre('validate', function () {
+  if (this.householdId && !this.household) {
+    this.household = this.householdId;
+  }
+  if (this.household && !this.householdId) {
+    this.householdId = this.household;
+  }
+});
 
 module.exports = mongoose.model('User', userSchema);

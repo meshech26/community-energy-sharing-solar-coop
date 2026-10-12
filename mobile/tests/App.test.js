@@ -4,6 +4,40 @@ import * as ReactNative from 'react-native';
 import { listPublishedProposals } from '../services/proposalService';
 import { useAuthStore } from '../store/authStore';
 
+jest.mock('../MapWrapper', () => ({
+  __esModule: true,
+  default: 'MapView',
+  Marker: 'Marker',
+  Callout: 'Callout',
+}));
+jest.mock('../StripeWrapper', () => ({
+  StripeProvider: ({ children }) => children,
+  CardField: 'CardField',
+  useStripe: () => ({ confirmPayment: jest.fn() }),
+}));
+jest.mock('../global.css', () => ({}));
+jest.mock('../services/chatSocket', () => ({
+  connectSocket: jest.fn(() => ({
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
+    disconnect: jest.fn(),
+  })),
+  getSocket: jest.fn(() => ({
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
+    disconnect: jest.fn(),
+  })),
+  emitSendMessage: jest.fn(),
+  emitTyping: jest.fn(),
+  emitStopTyping: jest.fn(),
+  emitMarkAsRead: jest.fn(),
+}));
+jest.mock('expo-linking', () => ({
+  createURL: (path) => 'exp://' + (path || ''),
+}));
+
 jest.mock('../services/proposalService', () => ({
   listPublishedProposals: jest.fn(),
 }));
