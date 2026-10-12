@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function AdminApprovalsScreen({ navigation }) {
   const { user } = useAuthStore();
@@ -139,7 +140,7 @@ export default function AdminApprovalsScreen({ navigation }) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="flex-row items-center px-4 py-4 border-b border-gray-100 bg-white">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 flex-row items-center">
+          <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} className="mr-3 flex-row items-center">
             <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>Access Restricted</Text>
@@ -157,7 +158,7 @@ export default function AdminApprovalsScreen({ navigation }) {
           </Text>
 
           <TouchableOpacity 
-            onPress={() => navigation.goBack()}
+            onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })}
             className="w-full bg-[#0f6b4b] py-3.5 rounded-xl items-center"
           >
             <Text className="text-white font-bold text-base">Go Back</Text>
@@ -172,7 +173,7 @@ export default function AdminApprovalsScreen({ navigation }) {
       {/* Header */}
       <View className="flex-row justify-between items-center px-4 py-4 border-b border-gray-100 bg-white">
         <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 flex-row items-center">
+          <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} className="mr-3 flex-row items-center">
             <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />
           </TouchableOpacity>
           <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />

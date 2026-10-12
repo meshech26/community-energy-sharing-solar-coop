@@ -39,6 +39,9 @@ const linking = {
       SellEnergy: 'sell-energy',
       SellSuccess: 'sell-success',
       TransactionHistory: 'transaction-history',
+      Messages: 'messages',
+      NewMessage: 'new-message',
+      Chat: 'chat',
     },
   },
 };

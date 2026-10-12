@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import MapView, { Marker } from '../MapWrapper';
 import { getCurrentLocation, DEFAULT_REGION } from '../utils/locationUtils';
+import { safeGoBack } from '../utils/navigationUtils';
 
 const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -189,7 +190,7 @@ export default function SellEnergyScreen({ navigation }) {
       </View>
 
       <ScrollView className="flex-1 px-4 pt-6">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="flex-row items-center mb-4">
+        <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} className="flex-row items-center mb-4">
           <MaterialCommunityIcons name="arrow-left" size={14} color="#0f6b4b" />
           <Text className="text-[#0f6b4b] font-bold ml-1 text-xs">Back to Dashboard</Text>
         </TouchableOpacity>

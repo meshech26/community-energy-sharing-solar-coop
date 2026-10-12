@@ -4,12 +4,14 @@
   "main": "index.js",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.18.18",
     "@react-navigation/native": "^7.3.18",
     "@react-navigation/native-stack": "^7.18.10",
     "@stripe/stripe-react-native": "^0.75.0",
     "axios": "^1.19.0",
     "expo": "~57.0.15",
+    "expo-asset": "~57.0.16",
     "expo-linking": "~57.0.8",
     "expo-location": "~57.0.16",
     "expo-status-bar": "~57.0.1",
@@ -23,6 +25,9 @@
     "react-native-safe-area-context": "^5.9.1",
     "react-native-screens": "^4.27.0",
     "react-native-web": "^0.21.2",
+    "socket.io-client": "^4.8.3",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
     "zustand": "^5.0.15"
   },
   "scripts": {

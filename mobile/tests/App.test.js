@@ -1,3 +1,14 @@
+jest.mock('../MapWrapper', () => 'MapWrapper');
+jest.mock('../StripeWrapper', () => ({
+  StripeProvider: ({ children }) => children,
+  CardField: 'CardField',
+  useStripe: () => ({ confirmPayment: jest.fn() }),
+}));
+jest.mock('../global.css', () => ({}));
+jest.mock('expo-linking', () => ({
+  createURL: (path) => 'exp://' + path,
+}));
+
 import { render } from '@testing-library/react-native';
 import App from '../App';
 

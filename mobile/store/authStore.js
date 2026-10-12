@@ -1,5 +1,20 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
 import axios from 'axios';
+
+let AsyncStorageInstance = null;
+const getAsyncStorage = () => {
+  if (!AsyncStorageInstance) {
+    try {
+      const mod = require('@react-native-async-storage/async-storage');
+      AsyncStorageInstance = mod.default || mod;
+    } catch (e) {
+      AsyncStorageInstance = null;
+    }
+  }
+  return AsyncStorageInstance;
+};
 
 export const PRESET_USERS = {
   normal: {
@@ -28,58 +43,90 @@ export const PRESET_USERS = {
   },
 };
 
-export const useAuthStore = create((set, get) => ({
-  user: { ...PRESET_USERS.normal },
-  token: 'temp-jwt-token-normal',
-  isAuthenticated: false,
-
-  login: (user, token = 'temp-jwt-token') =>
-    set({
-      user,
-      token,
-      isAuthenticated: true,
-    }),
-
-  loginWithRole: (roleType = 'normal') => {
-    const preset = PRESET_USERS[roleType] || PRESET_USERS.normal;
-    set({
-      user: { ...preset },
-      token: `temp-token-${roleType}`,
-      isAuthenticated: true,
-    });
-    return preset;
-  },
-
-  setRole: (isCoopAdmin) => {
-    const currentUser = get().user;
-    if (!currentUser) {
-      const preset = isCoopAdmin ? PRESET_USERS.admin : PRESET_USERS.normal;
-      set({ user: { ...preset }, isAuthenticated: true });
-      return;
+const getStorageProvider = () => {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
     }
+  } catch (e) {}
+  try {
+    const storage = getAsyncStorage();
+    if (storage) {
+      return storage;
+    }
+  } catch (e) {}
+  const memStore = {};
+  return {
+    getItem: (key) => memStore[key] || null,
+    setItem: (key, val) => {
+      memStore[key] = val;
+    },
+    removeItem: (key) => {
+      delete memStore[key];
+    },
+  };
+};
 
-    set({
-      user: {
-        ...currentUser,
-        isCoopAdmin: Boolean(isCoopAdmin),
-        roleTitle: isCoopAdmin ? 'Admin User' : 'Co-op Member',
-      },
-    });
-  },
-
-  toggleRole: () => {
-    const currentUser = get().user;
-    const currentIsAdmin = currentUser ? currentUser.isCoopAdmin : false;
-    get().setRole(!currentIsAdmin);
-  },
-
-  logout: () =>
-    set({
-      user: null,
-      token: null,
+export const useAuthStore = create(
+  persist(
+    (set, get) => ({
+      user: { ...PRESET_USERS.normal },
+      token: 'temp-jwt-token-normal',
       isAuthenticated: false,
+
+      login: (user, token = 'temp-jwt-token') =>
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+        }),
+
+      loginWithRole: (roleType = 'normal') => {
+        const preset = PRESET_USERS[roleType] || PRESET_USERS.normal;
+        set({
+          user: { ...preset },
+          token: `temp-token-${roleType}`,
+          isAuthenticated: true,
+        });
+        return preset;
+      },
+
+      setRole: (isCoopAdmin) => {
+        const currentUser = get().user;
+        if (!currentUser) {
+          const preset = isCoopAdmin ? PRESET_USERS.admin : PRESET_USERS.normal;
+          set({ user: { ...preset }, isAuthenticated: true });
+          return;
+        }
+
+        set({
+          user: {
+            ...currentUser,
+            isCoopAdmin: Boolean(isCoopAdmin),
+            roleTitle: isCoopAdmin ? 'Admin User' : 'Co-op Member',
+          },
+        });
+      },
+
+      toggleRole: () => {
+        const currentUser = get().user;
+        const currentIsAdmin = currentUser ? currentUser.isCoopAdmin : false;
+        get().setRole(!currentIsAdmin);
+      },
+
+      logout: () =>
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        }),
     }),
-}));
+    {
+      name: 'solarcoop-auth',
+      storage: createJSONStorage(() => getStorageProvider()),
+    }
+  )
+);
 
 // Automatically inject role, email, and name into all outgoing axios requests
 axios.interceptors.request.use(

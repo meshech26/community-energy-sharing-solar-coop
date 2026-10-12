@@ -1,4 +1,4 @@
-﻿import { useAuthStore, PRESET_USERS } from '../store/authStore';
+import { useAuthStore, PRESET_USERS } from '../store/authStore';
 
 describe('Role-Based Auth Store', () => {
   beforeEach(() => {
@@ -42,7 +42,17 @@ describe('Role-Based Auth Store', () => {
 
     useAuthStore.getState().setRole(false);
     expect(useAuthStore.getState().user.isCoopAdmin).toBe(false);
-    expect(useAuthStore.getState().user.roleTitle).toBe('Normal User');
+    expect(useAuthStore.getState().user.roleTitle).toBe('Co-op Member');
+  });
+
+  test('can login as Sunil Fernando (member2) and retains identity', () => {
+    const sunil = useAuthStore.getState().loginWithRole('member2');
+
+    expect(sunil.name).toBe('Sunil Fernando');
+    expect(sunil.email).toBe(PRESET_USERS.member2.email);
+    expect(sunil.isCoopAdmin).toBe(false);
+    expect(useAuthStore.getState().user.name).toBe('Sunil Fernando');
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
   });
 
   test('logout clears user state', () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore, PRESET_USERS } from '../store/authStore';
@@ -9,7 +9,13 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState(PRESET_USERS.normal.email);
   const [password, setPassword] = useState('password123');
 
-  const { login, loginWithRole } = useAuthStore();
+  const { login, loginWithRole, isAuthenticated, user } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigation.replace('MainTabs');
+    }
+  }, [isAuthenticated, user]);
 
   const handleSelectRole = (role) => {
     setSelectedRole(role);

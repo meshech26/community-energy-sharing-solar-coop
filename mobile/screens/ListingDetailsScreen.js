@@ -3,10 +3,40 @@ import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Alert } fro
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from '../MapWrapper';
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+import { useChatStore } from '../store/chatStore';
+import { BACKEND_URL } from '../services/chatSocket';
 import { getCurrentLocation, calculateDistance, addPrivacyOffset, formatDistance, DEFAULT_REGION } from '../utils/locationUtils';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function ListingDetailsScreen({ navigation, route }) {
   const { listing } = route.params || {};
+  const { user } = useAuthStore();
+  const { openConversation } = useChatStore();
+
+  const handleContactSeller = async () => {
+    try {
+      const sellerId = listing?.sellerId?._id || (typeof listing?.sellerId === 'string' ? listing.sellerId : null);
+      if (sellerId && sellerId !== user?._id) {
+        const res = await axios.post(`${BACKEND_URL}/api/chat/conversations`, {
+          recipientId: sellerId,
+        });
+        if (res.data && res.data.success) {
+          const conversation = res.data.data;
+          openConversation(conversation);
+          navigation.navigate('Chat', {
+            conversationId: conversation._id,
+            recipient: conversation.recipient || { _id: sellerId, name: sellerName },
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not open direct chat with seller:', e.message);
+    }
+    navigation.navigate('Messages');
+  };
 
   const maxQuantity = listing?.availableQuantity !== undefined ? listing?.availableQuantity : (listing?.approvedQuantity > 0 ? listing?.approvedQuantity : (listing?.pendingQuantity || 8));
   const price = listing?.approvedUnitPrice > 0 ? listing?.approvedUnitPrice : (listing?.pendingUnitPrice || 42);
@@ -102,7 +132,7 @@ export default function ListingDetailsScreen({ navigation, route }) {
     <SafeAreaView className="flex-1 bg-[#f9f9f9]">
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-6">
+        <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Energy Sharing' })} className="mr-6">
           <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-900">Listing Details</Text>
@@ -111,18 +141,28 @@ export default function ListingDetailsScreen({ navigation, route }) {
       <ScrollView className="flex-1 px-4 pt-4">
         {/* Profile Card */}
         <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
-          <View className="flex-row items-center mb-4">
-            <View className="h-14 w-14 rounded-full bg-blue-100 items-center justify-center mr-4 overflow-hidden">
-               {/* Mock Avatar */}
-               <MaterialCommunityIcons name="account" size={32} color="#0f6b4b" />
-            </View>
-            <View>
-              <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>{sellerName}</Text>
-              <View className="flex-row items-center mt-1">
-                <MaterialCommunityIcons name="map-marker-outline" size={12} color="#666" />
-                <Text className="text-xs text-gray-600 ml-1">{getDisplayDistance()}</Text>
+          <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center flex-1">
+              <View className="h-14 w-14 rounded-full bg-blue-100 items-center justify-center mr-3 overflow-hidden">
+                 {/* Mock Avatar */}
+                 <MaterialCommunityIcons name="account" size={32} color="#0f6b4b" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>{sellerName}</Text>
+                <View className="flex-row items-center mt-1">
+                  <MaterialCommunityIcons name="map-marker-outline" size={12} color="#666" />
+                  <Text className="text-xs text-gray-600 ml-1">{getDisplayDistance()}</Text>
+                </View>
               </View>
             </View>
+
+            <TouchableOpacity
+              className="bg-[#e8f4ef] px-3.5 py-2 rounded-xl flex-row items-center border border-[#0f6b4b]/20 active:opacity-70"
+              onPress={handleContactSeller}
+            >
+              <MaterialCommunityIcons name="chat-outline" size={18} color="#0f6b4b" />
+              <Text className="text-[#0f6b4b] font-bold text-xs ml-1.5">Chat</Text>
+            </TouchableOpacity>
           </View>
           
           <View className="flex-row mb-5">
@@ -281,7 +321,7 @@ export default function ListingDetailsScreen({ navigation, route }) {
       <View className="bg-white px-4 py-4 border-t border-gray-200 flex-row">
         <TouchableOpacity 
           className="flex-1 bg-white border border-[#0f6b4b] rounded-xl py-3 items-center justify-center mr-2"
-          onPress={() => navigation.goBack()}
+          onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Energy Sharing' })}
         >
           <Text className="text-[#0f6b4b] font-bold">Cancel</Text>
         </TouchableOpacity>

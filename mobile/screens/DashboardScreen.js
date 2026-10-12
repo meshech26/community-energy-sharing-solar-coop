@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
+import { useChatStore } from '../store/chatStore';
 
 export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuthStore();
+  const { unreadTotal, initializeChat, fetchUnreadCount } = useChatStore();
   const isCoopAdmin = Boolean(user?.isCoopAdmin);
   const userName = user?.name || (isCoopAdmin ? 'Co-op Admin' : 'Kavindi');
+
+  useEffect(() => {
+    if (user) {
+      initializeChat(user);
+    }
+  }, [user?.email]);
 
   const handleLogout = () => {
     logout();
@@ -22,9 +30,25 @@ export default function DashboardScreen({ navigation }) {
           <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
           <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={24} color="#0f6b4b" />
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          {/* Messaging icon with unread badge: 💬 ① */}
+          <TouchableOpacity
+            className="relative p-1 mr-3.5 active:opacity-70"
+            onPress={() => navigation.navigate('Messages')}
+          >
+            <MaterialCommunityIcons name="chat-outline" size={24} color="#0f6b4b" />
+            {unreadTotal > 0 && (
+              <View className="absolute -top-1 -right-1.5 bg-[#0f6b4b] rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white">
+                <Text className="text-white text-[10px] font-bold">
+                  {unreadTotal > 9 ? '9+' : unreadTotal}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <MaterialCommunityIcons name="logout" size={24} color="#0f6b4b" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView className="flex-1 bg-white px-4 pt-4">
@@ -109,18 +133,30 @@ export default function DashboardScreen({ navigation }) {
         <Text className="text-gray-600 text-[10px] font-bold tracking-widest mb-3">QUICK LINKS</Text>
         <View className="flex-row justify-between mb-8">
           <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-3 py-2.5 rounded-full flex-row items-center justify-center mr-3"
+            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center mr-2"
             onPress={() => navigation.navigate('MyListings')}
           >
-            <MaterialCommunityIcons name="format-list-bulleted" size={16} color="#333" className="mr-2" />
-            <Text className="text-gray-800 text-xs font-semibold">My Listings</Text>
+            <MaterialCommunityIcons name="format-list-bulleted" size={15} color="#333" className="mr-1.5" />
+            <Text className="text-gray-800 text-xs font-semibold">Listings</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-3 py-2.5 rounded-full flex-row items-center justify-center"
+            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center mr-2"
             onPress={() => navigation.navigate('TransactionHistory')}
           >
-            <MaterialCommunityIcons name="history" size={16} color="#333" className="mr-2" />
-            <Text className="text-gray-800 text-xs font-semibold">Transactions</Text>
+            <MaterialCommunityIcons name="history" size={15} color="#333" className="mr-1.5" />
+            <Text className="text-gray-800 text-xs font-semibold">History</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center"
+            onPress={() => navigation.navigate('Messages')}
+          >
+            <MaterialCommunityIcons name="chat-outline" size={15} color="#0f6b4b" className="mr-1.5" />
+            <Text className="text-gray-800 text-xs font-semibold">Messages</Text>
+            {unreadTotal > 0 && (
+              <View className="bg-[#0f6b4b] rounded-full w-4 h-4 items-center justify-center ml-1">
+                <Text className="text-white text-[9px] font-bold">{unreadTotal > 9 ? '9+' : unreadTotal}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function OrderSummaryScreen({ navigation, route }) {
   const { total = 252, quantity = 6, seller = 'Household A', listingId } = route.params || {};
@@ -11,7 +12,7 @@ export default function OrderSummaryScreen({ navigation, route }) {
     <SafeAreaView className="flex-1 bg-[#f9f9f9]">
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-6">
+        <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Energy Sharing' })} className="mr-6">
           <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-900">Order Summary</Text>
@@ -104,7 +105,7 @@ export default function OrderSummaryScreen({ navigation, route }) {
 
         <TouchableOpacity 
           className="py-3 flex-row justify-center items-center mb-10"
-          onPress={() => navigation.goBack()}
+          onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Energy Sharing' })}
         >
           <Text className="text-[#0f6b4b] font-bold text-sm">Cancel Order</Text>
         </TouchableOpacity>

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import * as Linking from 'expo-linking';
 import { useStripe, CardField } from '../StripeWrapper';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function PaymentScreen({ navigation, route }) {
   const { total, quantity, seller = 'Household A', listingId } = route.params || { total: 252, quantity: 6 };
@@ -48,7 +49,7 @@ export default function PaymentScreen({ navigation, route }) {
     <SafeAreaView className="flex-1 bg-[#f9f9f9]">
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-6 flex-row items-center">
+        <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Energy Sharing' })} className="mr-6 flex-row items-center">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#0f6b4b" />
           <Text className="text-[#0f6b4b] font-bold ml-1 text-sm">Back</Text>
         </TouchableOpacity>

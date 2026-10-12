@@ -12,6 +12,9 @@ import SellSuccessScreen from '../screens/SellSuccessScreen';
 import TransactionHistoryScreen from '../screens/TransactionHistoryScreen';
 import AdminApprovalsScreen from '../screens/AdminApprovalsScreen';
 import LoginScreen from '../screens/LoginScreen';
+import MessagesScreen from '../screens/MessagesScreen';
+import NewMessageScreen from '../screens/NewMessageScreen';
+import ChatScreen from '../screens/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +33,10 @@ export default function AppNavigator() {
       <Stack.Screen name="SellEnergy" component={SellEnergyScreen} />
       <Stack.Screen name="SellSuccess" component={SellSuccessScreen} />
       <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
+      {/* 1-to-1 Messaging Screens */}
+      <Stack.Screen name="Messages" component={MessagesScreen} />
+      <Stack.Screen name="NewMessage" component={NewMessageScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>
   );
 }

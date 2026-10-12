@@ -4,9 +4,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function TransactionHistoryScreen({ navigation, route }) {
-  const { logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState(route?.params?.initialTab || 'Purchases');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +68,9 @@ export default function TransactionHistoryScreen({ navigation, route }) {
     }
   };
 
-  const purchases = orders.filter(o => o.buyerId?.email === 'user@solarcoop.com' || !o.buyerId);
-  const sales = orders.filter(o => o.sellerId?.email === 'user@solarcoop.com');
+  const currentEmail = user?.email || 'user@solarcoop.com';
+  const purchases = orders.filter(o => o.buyerId?.email === currentEmail || !o.buyerId);
+  const sales = orders.filter(o => o.sellerId?.email === currentEmail);
 
   const transactions = activeTab === 'Purchases' ? purchases : sales;
 
@@ -78,7 +80,7 @@ export default function TransactionHistoryScreen({ navigation, route }) {
       <View className="flex-row items-center justify-between px-4 py-4 bg-white border-b border-gray-100">
         <View className="flex-row items-center">
           <TouchableOpacity 
-            onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs')} 
+            onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} 
             className="mr-3 flex-row items-center"
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />

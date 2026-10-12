@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function MyListingsScreen({ navigation }) {
   const { logout } = useAuthStore();
@@ -326,7 +327,7 @@ export default function MyListingsScreen({ navigation }) {
       <View className="flex-row justify-between items-center px-4 py-4 border-b border-gray-100 bg-white">
         <View className="flex-row items-center">
           <TouchableOpacity 
-            onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs')} 
+            onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} 
             className="mr-3 flex-row items-center"
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color="#0f6b4b" />

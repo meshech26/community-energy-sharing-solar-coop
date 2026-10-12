@@ -6,10 +6,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker, Callout } from '../MapWrapper';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { useChatStore } from '../store/chatStore';
 import { getCurrentLocation, calculateDistance, addPrivacyOffset, formatDistance, DEFAULT_REGION } from '../utils/locationUtils';
 
 export default function MarketplaceScreen({ navigation }) {
   const { user, logout } = useAuthStore();
+  const { unreadTotal } = useChatStore();
   const isCoopAdmin = Boolean(user?.isCoopAdmin); 
 
   const handleLogout = () => {
@@ -122,9 +124,25 @@ export default function MarketplaceScreen({ navigation }) {
           <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
           <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={22} color="#0f6b4b" />
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          {/* Messaging icon with unread badge */}
+          <TouchableOpacity
+            className="relative p-1 mr-3.5 active:opacity-70"
+            onPress={() => navigation.navigate('Messages')}
+          >
+            <MaterialCommunityIcons name="chat-outline" size={24} color="#0f6b4b" />
+            {unreadTotal > 0 && (
+              <View className="absolute -top-1 -right-1.5 bg-[#0f6b4b] rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white">
+                <Text className="text-white text-[10px] font-bold">
+                  {unreadTotal > 9 ? '9+' : unreadTotal}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <MaterialCommunityIcons name="logout" size={22} color="#0f6b4b" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-4 pt-4">

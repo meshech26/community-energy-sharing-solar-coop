@@ -2,13 +2,14 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { safeGoBack } from '../utils/navigationUtils';
 
 export default function ReviewListingScreen({ navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
+        <TouchableOpacity onPress={() => safeGoBack(navigation, 'MainTabs', { screen: 'Dashboard' })} className="mr-4">
           <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-900">Review Listing</Text>
