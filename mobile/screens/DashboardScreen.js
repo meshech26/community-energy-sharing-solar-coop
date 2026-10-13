@@ -1,15 +1,43 @@
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Platform, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 
 export default function DashboardScreen({ navigation }) {
-  const { user, logout } = useAuthStore();
-  const { unreadTotal, initializeChat, fetchUnreadCount } = useChatStore();
+  const { user } = useAuthStore();
+  const { unreadTotal, initializeChat } = useChatStore();
   const isCoopAdmin = Boolean(user?.isCoopAdmin);
   const userName = user?.name || (isCoopAdmin ? 'Co-op Admin' : 'Kavindi');
+  const chatFloat = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (mounted) setReduceMotion(enabled);
+    }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    if (reduceMotion) return;
+    const animation = Animated.loop(Animated.sequence([
+      Animated.timing(chatFloat, { toValue: -5, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
+      Animated.timing(chatFloat, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== 'web', isInteraction: false }),
+    ]));
+    animation.start();
+    return () => {
+      animation.stop();
+      chatFloat.setValue(0);
+    };
+  }, [chatFloat, reduceMotion]));
 
   useEffect(() => {
     if (user) {
@@ -17,40 +45,9 @@ export default function DashboardScreen({ navigation }) {
     }
   }, [user?.email]);
 
-  const handleLogout = () => {
-    logout();
-    navigation.replace('Login');
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row justify-between items-center px-4 py-4 border-b border-gray-100">
-        <View className="flex-row items-center">
-          <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
-          <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
-        </View>
-        <View className="flex-row items-center">
-          {/* Messaging icon with unread badge: 💬 ① */}
-          <TouchableOpacity
-            className="relative p-1 mr-3.5 active:opacity-70"
-            onPress={() => navigation.navigate('Messages')}
-          >
-            <MaterialCommunityIcons name="chat-outline" size={24} color="#0f6b4b" />
-            {unreadTotal > 0 && (
-              <View className="absolute -top-1 -right-1.5 bg-[#0f6b4b] rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white">
-                <Text className="text-white text-[10px] font-bold">
-                  {unreadTotal > 9 ? '9+' : unreadTotal}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={24} color="#0f6b4b" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView className="flex-1 bg-white px-4 pt-4">
         {/* Admin Approvals Banner - Only visible to Admin (isCoopAdmin: true) */}
         {isCoopAdmin && (
@@ -201,8 +198,31 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </View>
         </View>
-        <View className="h-10" />
+        <View style={{ height: 96 }} />
       </ScrollView>
+      <Animated.View style={{ position: 'absolute', right: 20, bottom: 24, zIndex: 10, transform: [{ translateY: chatFloat }] }}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={unreadTotal > 0 ? `Open chat, ${unreadTotal} unread messages` : 'Open chat'}
+          accessibilityHint="Opens your messages"
+          onPress={() => navigation.navigate('Messages')}
+          activeOpacity={0.8}
+          style={{
+            width: 60, height: 60, borderRadius: 30,
+            backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+            alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#2563eb', shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+          }}
+        >
+          <MaterialCommunityIcons name="chat" size={28} color="#2563eb" />
+          {unreadTotal > 0 && (
+            <View style={{ position: 'absolute', top: -3, right: -3, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5, backgroundColor: '#2563eb', borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadTotal > 9 ? '9+' : unreadTotal}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 }

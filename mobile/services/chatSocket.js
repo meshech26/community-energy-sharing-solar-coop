@@ -5,13 +5,17 @@ import { Platform } from 'react-native';
 export const BACKEND_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://127.0.0.1:5000';
 
 let socket = null;
+let socketUserId = null;
 
 export const connectSocket = (userId) => {
-  if (socket && socket.connected) {
-    if (userId) socket.emit('join', { userId });
+  const nextUserId = userId?.toString() || null;
+  if (socket && socketUserId === nextUserId) {
     return socket;
   }
 
+  // A socket must never keep the previous account's user-room membership.
+  disconnectSocket();
+  socketUserId = nextUserId;
   socket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
     reconnection: true,
@@ -19,9 +23,10 @@ export const connectSocket = (userId) => {
     reconnectionDelay: 1000,
   });
 
+  const connectedSocket = socket;
   socket.on('connect', () => {
-    if (userId) {
-      socket.emit('join', { userId });
+    if (nextUserId) {
+      connectedSocket.emit('join', { userId: nextUserId });
     }
   });
 
@@ -39,6 +44,7 @@ export const disconnectSocket = () => {
     socket.disconnect();
     socket = null;
   }
+  socketUserId = null;
 };
 
 export const emitSendMessage = (data, callback) => {

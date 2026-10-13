@@ -6,18 +6,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker, Callout } from '../MapWrapper';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-import { useChatStore } from '../store/chatStore';
 import { getCurrentLocation, calculateDistance, addPrivacyOffset, formatDistance, DEFAULT_REGION } from '../utils/locationUtils';
 
 export default function MarketplaceScreen({ navigation }) {
-  const { user, logout } = useAuthStore();
-  const { unreadTotal } = useChatStore();
-  const isCoopAdmin = Boolean(user?.isCoopAdmin); 
+  const { user } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    navigation.replace('Login');
-  };
   
   const [minQuantity, setMinQuantity] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -118,56 +111,7 @@ export default function MarketplaceScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f9f9f9]">
-      {/* Header */}
-      <View className="flex-row justify-between items-center px-4 py-4 border-b border-gray-100 bg-white">
-        <View className="flex-row items-center">
-          <MaterialCommunityIcons name="solar-panel-large" size={20} color="#0f6b4b" />
-          <Text className="text-xl font-bold ml-2 text-gray-900" style={{ fontFamily: 'serif' }}>Solar Share</Text>
-        </View>
-        <View className="flex-row items-center">
-          {/* Messaging icon with unread badge */}
-          <TouchableOpacity
-            className="relative p-1 mr-3.5 active:opacity-70"
-            onPress={() => navigation.navigate('Messages')}
-          >
-            <MaterialCommunityIcons name="chat-outline" size={24} color="#0f6b4b" />
-            {unreadTotal > 0 && (
-              <View className="absolute -top-1 -right-1.5 bg-[#0f6b4b] rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white">
-                <Text className="text-white text-[10px] font-bold">
-                  {unreadTotal > 9 ? '9+' : unreadTotal}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={22} color="#0f6b4b" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView className="flex-1 px-4 pt-4">
-        {/* Admin Approvals Banner - Only visible to Admin (isCoopAdmin: true) */}
-        {isCoopAdmin && (
-          <TouchableOpacity 
-            className="bg-[#e2e8e4] p-4 rounded-xl flex-row items-center justify-between mb-5 border border-emerald-200"
-            onPress={() => navigation.navigate('AdminApprovals')}
-          >
-            <View className="flex-row items-center flex-1">
-              <MaterialCommunityIcons name="shield-check-outline" size={24} color="#0f6b4b" className="mr-3" />
-              <View className="flex-1">
-                <View className="flex-row items-center">
-                  <Text className="font-semibold text-gray-800 text-sm">Admin Approvals</Text>
-                  <View className="bg-[#0f6b4b] px-1.5 py-0.5 rounded ml-2">
-                    <Text className="text-white text-[9px] font-bold">Only Admin</Text>
-                  </View>
-                </View>
-                <Text className="text-gray-500 text-xs">Review and authorize pending cooperative energy listings.</Text>
-              </View>
-            </View>
-            <Text className="text-[#0f6b4b] font-bold text-sm ml-2">Review</Text>
-          </TouchableOpacity>
-        )}
-
         {/* Title */}
         <View className="flex-row justify-between items-center mb-1">
           <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'serif' }}>Available Energy</Text>

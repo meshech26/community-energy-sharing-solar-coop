@@ -35,7 +35,7 @@ export default function ChatScreen({ route, navigation }) {
   const typingTimeoutRef = useRef(null);
   const flatListRef = useRef(null);
 
-  const resolvedRecipient = activeConversation?.recipient || recipient;
+  const resolvedRecipient = (activeConversation?._id === conversationId ? activeConversation.recipient : null) || recipient;
   const recipientId = (resolvedRecipient?._id || resolvedRecipient?.id)?.toString();
   const recipientEmail = resolvedRecipient?.email?.toLowerCase();
   const recipientName = resolvedRecipient?.name || 'Solar Member';
@@ -44,8 +44,15 @@ export default function ChatScreen({ route, navigation }) {
       id?.toString() === recipientId ||
       (recipientEmail && id?.toString()?.toLowerCase() === recipientEmail)
   );
-  const isTyping = Boolean(typingMap && typingMap[conversationId]);
-  const typingSenderName = typingMap ? typingMap[conversationId] : '';
+  const typingParticipant = typingMap?.[conversationId];
+  const ownIds = [currentUser?._id, currentUser?.id, user?._id, user?.id]
+    .filter(Boolean).map(id => id.toString());
+  const isTyping = Boolean(
+    typingParticipant?.senderId &&
+    typingParticipant.senderId === recipientId &&
+    !ownIds.includes(typingParticipant.senderId)
+  );
+  const typingSenderName = typingParticipant?.senderName;
 
   useEffect(() => {
     // Ensure conversation is opened and messages decrypted with current user

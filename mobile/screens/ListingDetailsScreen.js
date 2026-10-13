@@ -3,40 +3,11 @@ import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Alert } fro
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from '../MapWrapper';
-import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
-import { useChatStore } from '../store/chatStore';
-import { BACKEND_URL } from '../services/chatSocket';
 import { getCurrentLocation, calculateDistance, addPrivacyOffset, formatDistance, DEFAULT_REGION } from '../utils/locationUtils';
 import { safeGoBack } from '../utils/navigationUtils';
 
 export default function ListingDetailsScreen({ navigation, route }) {
   const { listing } = route.params || {};
-  const { user } = useAuthStore();
-  const { openConversation } = useChatStore();
-
-  const handleContactSeller = async () => {
-    try {
-      const sellerId = listing?.sellerId?._id || (typeof listing?.sellerId === 'string' ? listing.sellerId : null);
-      if (sellerId && sellerId !== user?._id) {
-        const res = await axios.post(`${BACKEND_URL}/api/chat/conversations`, {
-          recipientId: sellerId,
-        });
-        if (res.data && res.data.success) {
-          const conversation = res.data.data;
-          openConversation(conversation);
-          navigation.navigate('Chat', {
-            conversationId: conversation._id,
-            recipient: conversation.recipient || { _id: sellerId, name: sellerName },
-          });
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Could not open direct chat with seller:', e.message);
-    }
-    navigation.navigate('Messages');
-  };
 
   const maxQuantity = listing?.availableQuantity !== undefined ? listing?.availableQuantity : (listing?.approvedQuantity > 0 ? listing?.approvedQuantity : (listing?.pendingQuantity || 8));
   const price = listing?.approvedUnitPrice > 0 ? listing?.approvedUnitPrice : (listing?.pendingUnitPrice || 42);
@@ -155,14 +126,6 @@ export default function ListingDetailsScreen({ navigation, route }) {
                 </View>
               </View>
             </View>
-
-            <TouchableOpacity
-              className="bg-[#e8f4ef] px-3.5 py-2 rounded-xl flex-row items-center border border-[#0f6b4b]/20 active:opacity-70"
-              onPress={handleContactSeller}
-            >
-              <MaterialCommunityIcons name="chat-outline" size={18} color="#0f6b4b" />
-              <Text className="text-[#0f6b4b] font-bold text-xs ml-1.5">Chat</Text>
-            </TouchableOpacity>
           </View>
           
           <View className="flex-row mb-5">
@@ -176,7 +139,7 @@ export default function ListingDetailsScreen({ navigation, route }) {
           </View>
 
           <Text className="text-gray-600 text-sm leading-5">
-            "We have excess solar energy generated during the day while we are at work. Happy to share it with the community!"
+            {listing?.description?.trim() || 'No description provided by the seller.'}
           </Text>
         </View>
 

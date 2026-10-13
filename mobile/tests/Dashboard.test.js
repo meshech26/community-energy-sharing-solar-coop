@@ -7,6 +7,9 @@ import { useChatStore } from '../store/chatStore';
 jest.mock('../store/authStore', () => ({ useAuthStore: jest.fn() }));
 jest.mock('../store/chatStore', () => ({ useChatStore: jest.fn() }));
 jest.mock('@expo/vector-icons', () => ({ MaterialCommunityIcons: () => null }));
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: callback => require('react').useEffect(callback, [callback]),
+}));
 
 let navigation, initializeChat;
 beforeEach(() => {

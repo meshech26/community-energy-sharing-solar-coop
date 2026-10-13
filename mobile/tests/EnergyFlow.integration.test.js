@@ -34,12 +34,14 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-test('GPS permission -> coordinates -> sell map marker -> listing request', async () => {
+test('automatic GPS permission -> coordinates -> pannable sell map -> listing request', async () => {
   const navigation = { navigate: jest.fn() };
   const screen = await render(<SellEnergyScreen navigation={navigation} />);
-  await fireEvent.press(screen.getByText('Use My Current Location'));
   await waitFor(() => expect(screen.getByTestId('marker').props.coordinate).toEqual(coordinates));
   expect(Location.requestForegroundPermissionsAsync).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId('map').props.initialRegion).toEqual(expect.objectContaining(coordinates));
+  expect(screen.getByTestId('map').props.scrollEnabled).toBe(true);
+  expect(screen.getByTestId('map').props.zoomEnabled).toBe(true);
   await fireEvent.press(screen.getByText('Submit for Approval'));
   expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/energy/listings'), expect.objectContaining({ quantity: 10, unitPrice: 45, location: coordinates }));
   expect(navigation.navigate).toHaveBeenCalledWith('SellSuccess');
@@ -49,8 +51,7 @@ test('denied GPS permission shows guidance without fetching position or placing 
   Location.requestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const screen = await render(<SellEnergyScreen navigation={{ navigate: jest.fn() }} />);
-  await fireEvent.press(screen.getByText('Use My Current Location'));
-  expect(alert).toHaveBeenCalledWith('Permission Denied', expect.any(String));
+  expect(alert).toHaveBeenCalledWith('Location Unavailable', expect.any(String));
   expect(Location.getCurrentPositionAsync).not.toHaveBeenCalled();
   expect(screen.queryByTestId('marker')).toBeNull();
   expect(axios.post).not.toHaveBeenCalled();

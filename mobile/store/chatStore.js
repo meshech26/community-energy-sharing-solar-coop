@@ -18,7 +18,7 @@ export const useChatStore = create((set, get) => ({
   messages: [],
   unreadTotal: 0,
   onlineUsers: [],
-  typingMap: {}, // { [conversationId]: 'Sender Name' }
+  typingMap: {}, // { [conversationId]: { senderId, senderName } }
   loading: false,
   currentUser: null,
   initializedUserId: null,
@@ -37,7 +37,7 @@ export const useChatStore = create((set, get) => ({
     set({ isInitializing: true });
 
     // Set initial user
-    set({ currentUser: user });
+    set({ currentUser: user, typingMap: {} });
 
     // Fetch real profile from backend to ensure we have actual MongoDB _id
     let realUser = user;
@@ -96,9 +96,14 @@ export const useChatStore = create((set, get) => ({
       set({ onlineUsers: get().onlineUsers.filter((id) => id !== userId) });
     });
 
-    socket.on('user_typing', ({ conversationId, senderName }) => {
+    socket.on('user_typing', ({ conversationId, senderId, senderName }) => {
+      const { currentUser } = get();
+      const ownIds = [currentUser?._id, currentUser?.id, currentUser?.email]
+        .filter(Boolean).map(id => id.toString());
+      const typingUserId = senderId?.toString();
+      if (!conversationId || !typingUserId || ownIds.includes(typingUserId)) return;
       set((state) => ({
-        typingMap: { ...state.typingMap, [conversationId]: senderName },
+        typingMap: { ...state.typingMap, [conversationId]: { senderId: typingUserId, senderName } },
       }));
     });
 
@@ -138,8 +143,10 @@ export const useChatStore = create((set, get) => ({
       }
     });
 
-    socket.on('user_stopped_typing', ({ conversationId }) => {
+    socket.on('user_stopped_typing', ({ conversationId, senderId }) => {
       set((state) => {
+        // An echoed stop event from me must not hide the other person's indicator.
+        if (!senderId || state.typingMap[conversationId]?.senderId !== senderId.toString()) return state;
         const next = { ...state.typingMap };
         delete next[conversationId];
         return { typingMap: next };
@@ -505,6 +512,7 @@ export const useChatStore = create((set, get) => ({
     const senderId = (currentUser._id || currentUser.id)?.toString();
     const receiverId = (activeConversation.recipient?._id || activeConversation.recipient?.id)?.toString();
     const senderName = currentUser.name || 'Co-op Member';
+    if (!senderId || !receiverId || senderId === receiverId) return;
 
     if (isTyping) {
       emitTyping(activeConversation._id, senderId, receiverId, senderName);

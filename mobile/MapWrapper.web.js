@@ -33,12 +33,15 @@ export const Marker = ({ coordinate, onPress, pinColor = '#0f6b4b', title }) => 
 
 export const Callout = ({ children }) => <>{children}</>;
 
-const MapView = ({ style, initialRegion, children, showsUserLocation }) => {
-  const lat = initialRegion?.latitude || 6.9271;
-  const lon = initialRegion?.longitude || 79.8612;
+const MapView = ({ style, region, initialRegion, children, showsUserLocation, showListingOverlay = true }) => {
+  const mapRegion = region ?? initialRegion;
+  const lat = mapRegion?.latitude ?? 6.9271;
+  const lon = mapRegion?.longitude ?? 79.8612;
+  const halfWidth = (mapRegion?.longitudeDelta ?? 0.1) / 2;
+  const halfHeight = (mapRegion?.latitudeDelta ?? 0.06) / 2;
 
   // OpenStreetMap embed URL for web view
-  const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.05}%2C${lat - 0.03}%2C${lon + 0.05}%2C${lat + 0.03}&layer=mapnik&marker=${lat}%2C${lon}`;
+  const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon - halfWidth}%2C${lat - halfHeight}%2C${lon + halfWidth}%2C${lat + halfHeight}&layer=mapnik&marker=${lat}%2C${lon}`;
 
   return (
     <View
@@ -74,7 +77,7 @@ const MapView = ({ style, initialRegion, children, showsUserLocation }) => {
       />
 
       {/* Overlay with listing pin markers */}
-      <View
+      {showListingOverlay && <View
         style={{
           position: 'absolute',
           bottom: 10,
@@ -95,7 +98,7 @@ const MapView = ({ style, initialRegion, children, showsUserLocation }) => {
           📍 Tap a community seller below:
         </Text>
         {children}
-      </View>
+      </View>}
     </View>
   );
 };
