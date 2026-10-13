@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Linking, Text, useWindowDimensions } from 'react-native';
+import { Linking, Platform, Text, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -206,6 +206,15 @@ const linking = {
 export default function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [resetToken, setResetToken] = useState(null);
+  const [navigationReady, setNavigationReady] = useState(false);
+
+  // On web, '/' can supply a Login state before the email hash is read.
+  // Explicitly open the reset route once ready instead of relying on initialRouteName.
+  useEffect(() => {
+    if (navigationReady && resetToken && !isAuthenticated && navigationRef.isReady()) {
+      navigationRef.navigate('ResetPassword', { token: resetToken });
+    }
+  }, [navigationReady, resetToken, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) setResetToken(null);
@@ -218,18 +227,23 @@ export default function AppNavigator() {
     };
     Linking.getInitialURL().then(receive).catch(() => {});
     const listener = Linking.addEventListener('url', ({ url }) => receive(url));
-    return () => listener.remove();
+    const receiveHash = () => receive(window.location.href);
+    if (Platform.OS === 'web') window.addEventListener('hashchange', receiveHash);
+    return () => {
+      listener.remove();
+      if (Platform.OS === 'web') window.removeEventListener('hashchange', receiveHash);
+    };
   }, []);
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking} onReady={() => setNavigationReady(true)}>
       {isAuthenticated ? (
         <NotificationProvider navigation={notificationNavigation}>
           <CurrentUserRefresh />
           <AuthenticatedNavigator />
         </NotificationProvider>
       ) : (
-        <AuthNavigator key={resetToken || 'login'} resetToken={resetToken} />
+        <AuthNavigator resetToken={resetToken} />
       )}
     </NavigationContainer>
   );
