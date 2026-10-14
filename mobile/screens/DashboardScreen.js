@@ -138,23 +138,11 @@ export default function DashboardScreen({ navigation }) {
             <Text className="text-gray-800 text-xs font-semibold">Listings</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center mr-2"
+            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center"
             onPress={() => navigation.navigate('TransactionHistory')}
           >
             <MaterialCommunityIcons name="history" size={15} color="#333" className="mr-1.5" />
             <Text className="text-gray-800 text-xs font-semibold">History</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className="flex-1 bg-white border border-gray-300 px-2.5 py-2.5 rounded-full flex-row items-center justify-center"
-            onPress={() => navigation.navigate('Messages')}
-          >
-            <MaterialCommunityIcons name="chat-outline" size={15} color="#0f6b4b" className="mr-1.5" />
-            <Text className="text-gray-800 text-xs font-semibold">Messages</Text>
-            {unreadTotal > 0 && (
-              <View className="bg-[#0f6b4b] rounded-full w-4 h-4 items-center justify-center ml-1">
-                <Text className="text-white text-[9px] font-bold">{unreadTotal > 9 ? '9+' : unreadTotal}</Text>
-              </View>
-            )}
           </TouchableOpacity>
         </View>
 
