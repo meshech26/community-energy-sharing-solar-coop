@@ -4,28 +4,23 @@ import Svg, { Polyline, Circle } from "react-native-svg";
 
 export default function TrendChart({ history, forecastValue, width = 300, height = 130 }) {
   if (!history || history.length === 0) return null;
-
   const values = history.map((h) => h.usageKwh);
   const allValues = forecastValue !== undefined ? [...values, forecastValue] : values;
   const maxVal = Math.max(...allValues, 1);
   const minVal = Math.min(...allValues, 0);
   const range = maxVal - minVal || 1;
-
   const padding = 16;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
   const totalSteps = history.length - 1 + (forecastValue !== undefined ? 1 : 0);
   const stepX = totalSteps > 0 ? chartWidth / totalSteps : 0;
-
   const toY = (val) => padding + chartHeight - ((val - minVal) / range) * chartHeight;
   const toX = (index) => padding + index * stepX;
-
   const points = history.map((h, i) => `${toX(i)},${toY(h.usageKwh)}`).join(" ");
   const lastIndex = history.length - 1;
   const forecastLine = forecastValue !== undefined
     ? `${toX(lastIndex)},${toY(history[lastIndex].usageKwh)} ${toX(lastIndex + 1)},${toY(forecastValue)}`
     : null;
-
   return (
     <View>
       <Svg width={width} height={height}>
@@ -43,7 +38,7 @@ export default function TrendChart({ history, forecastValue, width = 300, height
       <View className="flex-row justify-between mt-1">
         <Text className="text-xs text-muted">{history[0].month}</Text>
         <Text className="text-xs text-sun font-semibold">
-          {forecastValue !== undefined ? "Projected →" : history[lastIndex].month}
+          {forecastValue !== undefined ? "Projected" : history[lastIndex].month}
         </Text>
       </View>
     </View>
